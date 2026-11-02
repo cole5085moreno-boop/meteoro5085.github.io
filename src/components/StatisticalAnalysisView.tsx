@@ -18,7 +18,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import type { PeriodStatsBundle, WeatherObservation } from '../types/weather.ts';
-import { fetchStats, fetchObservations } from '../lib/api.ts';
+import { fetchStats, fetchObservations, exportDataLocally } from '../lib/api.ts';
 
 export const StatisticalAnalysisView: React.FC = () => {
   const [range, setRange] = useState<string>('24h');
@@ -119,20 +119,20 @@ export const StatisticalAnalysisView: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <a
-              href="/api/export?format=xlsx"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            <button
+              onClick={() => exportDataLocally('xlsx')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-emerald-600" />
               <span>Exportar Excel (XLSX)</span>
-            </a>
-            <a
-              href="/api/export?format=csv"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            </button>
+            <button
+              onClick={() => exportDataLocally('csv')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-sky-600" />
               <span>Exportar CSV</span>
-            </a>
+            </button>
           </div>
         </div>
 
