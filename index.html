@@ -1,21 +1,51 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
     <title>Proyecto Estación Meteorológica Colegio 5085</title>
-    <meta name="description" content="Plataforma meteorológica oficial del Colegio Secundario N.º 5085 «Dr. Mariano Moreno» (General Güemes, Salta). Datos en tiempo real e históricos, análisis estadístico, laboratorio educativo e informes." />
-    <meta property="og:title" content="Proyecto Estación Meteorológica Colegio 5085" />
-    <meta property="og:description" content="Plataforma meteorológica oficial del Colegio Secundario N.º 5085 «Dr. Mariano Moreno» (General Güemes, Salta). Datos en tiempo real e históricos, análisis estadístico, laboratorio educativo e informes." />
+    <meta
+      name="description"
+      content="Plataforma meteorológica oficial del Colegio Secundario N.º 5085 «Dr. Mariano Moreno» (General Güemes, Salta). Datos en tiempo real e históricos, análisis estadístico, laboratorio educativo e informes."
+    />
+    <meta name="author" content="Colegio Secundario N.º 5085 «Dr. Mariano Moreno»" />
+    <meta name="theme-color" content="#0284c7" />
+
+    <!-- Open Graph / Redes Sociales -->
     <meta property="og:type" content="website" />
+    <meta property="og:title" content="Proyecto Estación Meteorológica Colegio 5085" />
+    <meta
+      property="og:description"
+      content="Plataforma meteorológica oficial del Colegio Secundario N.º 5085 «Dr. Mariano Moreno» (General Güemes, Salta). Datos en tiempo real e históricos, análisis estadístico, laboratorio educativo e informes."
+    />
+    <meta property="og:locale" content="es_AR" />
+    <meta property="og:site_name" content="Estación Meteorológica Colegio 5085" />
+
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="twitter:title" content="Proyecto Estación Meteorológica Colegio 5085" />
+    <meta
+      name="twitter:description"
+      content="Plataforma meteorológica oficial del Colegio Secundario N.º 5085 «Dr. Mariano Moreno» (General Güemes, Salta). Datos en tiempo real e históricos, análisis estadístico, laboratorio educativo e informes."
+    />
+
+    <!-- Favicon SVG con icono meteorológico oficial -->
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230284c7'/%3E%3Cpath d='M16 6a5 5 0 0 1 5 5c0 .35-.04.7-.1 1.03A5 5 0 0 1 24 17a5 5 0 0 1-5 5H11a4 4 0 0 1-4-4c0-1.9 1.34-3.5 3.16-3.9A5 5 0 0 1 16 6z' fill='white'/%3E%3Cpath d='M14 24l-2 4m6-4l-2 4' stroke='%2338bdf8' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
+
+    <!-- Fuentes Tipográficas Oficiales: Plus Jakarta Sans y JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
   </head>
-  <body>
+  <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen antialiased selection:bg-sky-500 selection:text-white">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

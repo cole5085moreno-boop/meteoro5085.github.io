@@ -2,5 +2,7 @@
   "name": "Proyecto Estación Meteorológica Colegio 5085",
   "description": "Plataforma meteorológica oficial del Colegio Secundario N.º 5085 «Dr. Mariano Moreno» (General Güemes, Salta). Datos en tiempo real e históricos, análisis estadístico, laboratorio educativo e informes.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
