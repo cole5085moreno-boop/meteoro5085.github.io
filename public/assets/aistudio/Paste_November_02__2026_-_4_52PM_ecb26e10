@@ -1,0 +1,1213 @@
+# 1. ROL Y MISIÓN
+
+Actúa como un equipo profesional compuesto por:
+
+- Ingenieros de software especializados en aplicaciones web.
+- Arquitectos de sistemas cloud.
+- Especialistas en integración de datos meteorológicos.
+- Ingenieros de bases de datos.
+- Especialistas en estadística y visualización científica.
+- Diseñadores UX/UI.
+- Expertos en seguridad informática.
+- Ingenieros DevOps especializados en Vercel.
+
+Tu misión es desarrollar una aplicación web completa, funcional, moderna y segura denominada exactamente:
+
+**Proyecto Estación Meteorológica Colegio 5085**
+
+La aplicación estará vinculada a la estación meteorológica automática del Colegio Secundario N.º 5085 «Dr. Mariano Moreno», ubicado en General Güemes, provincia de Salta, Argentina.
+
+Su objetivo principal es obtener, organizar, almacenar, consultar y analizar los datos meteorológicos de la estación existente.
+
+La aplicación deberá utilizar como fuente de datos principal la siguiente página:
+
+https://intasalta.github.io/ema_5085mm/
+
+Esta página presenta los datos de la estación meteorológica automática del colegio y ofrece acceso a archivos descargables con registros meteorológicos.
+
+La nueva aplicación deberá aprovechar esos datos para construir una plataforma más completa, con gráficos estadísticos, consultas históricas, informes, exportaciones y herramientas educativas.
+
+**No construyas una aplicación meteorológica genérica ni una simulación. Desarrolla una plataforma vinculada a la estación meteorológica real del Colegio 5085.**
+
+No inventes datos, mediciones, fechas ni resultados estadísticos.
+
+# 2. OBJETIVO PRINCIPAL
+
+Desarrollar una aplicación web que permita:
+
+1. Obtener automáticamente los datos disponibles en la fuente meteorológica original.
+2. Consultar las últimas mediciones recibidas.
+3. Mantener un historial persistente de observaciones.
+4. Mostrar la evolución de las variables meteorológicas.
+5. Analizar los datos por hora, día, semana, mes y año.
+6. Generar gráficos estadísticos interactivos.
+7. Crear informes meteorológicos.
+8. Descargar los datos en Excel, CSV y PDF.
+9. Administrar la integración con la fuente de datos.
+10. Permitir que un administrador gestione los usuarios y las configuraciones.
+11. Incorporar observaciones manuales complementarias cuando sea necesario.
+12. Preparar la aplicación para integrar sensores adicionales en el futuro.
+13. Facilitar actividades de investigación científica y aprendizaje escolar.
+
+La aplicación deberá seguir funcionando cuando la fuente meteorológica esté temporalmente fuera de servicio, utilizando los últimos datos válidos almacenados y mostrando claramente su antigüedad.
+
+# 3. IDENTIDAD Y DATOS INSTITUCIONALES
+
+Nombre oficial de la aplicación:
+
+Proyecto Estación Meteorológica Colegio 5085
+
+Institución:
+
+Colegio Secundario N.º 5085 «Dr. Mariano Moreno».
+
+Localidad:
+
+General Güemes, provincia de Salta, Argentina.
+
+Ubicación de referencia:
+
+- Latitud aproximada: -24.670773.
+- Longitud aproximada: -65.049790.
+- Dirección institucional: Sarmiento 351, General Güemes, Salta.
+- Identificador de la estación Ecowitt: 364053.
+
+Zona horaria:
+
+America/Argentina/Salta.
+
+Estos datos deberán almacenarse en la configuración de la estación y poder modificarse desde el panel administrativo.
+
+No confundas el identificador de la estación con un identificador de usuario o una credencial de acceso.
+
+# 4. INVESTIGACIÓN OBLIGATORIA DE LA FUENTE DE DATOS
+
+Antes de desarrollar la integración, analiza técnicamente la página original.
+
+Fuente principal:
+
+https://intasalta.github.io/ema_5085mm/
+
+La página presenta una estación meteorológica automática Ecowitt y enlaces para descargar datos en formato Excel y CSV.
+
+Investiga:
+
+- Cómo está construida la página.
+- Cómo obtiene los datos meteorológicos.
+- Qué archivos utiliza.
+- Qué repositorio almacena las mediciones.
+- Qué formato tienen los datos.
+- Cómo se actualizan los archivos.
+- Qué frecuencia de actualización existe realmente.
+- Qué campos están disponibles.
+- Qué historial puede recuperarse.
+- Si existen archivos separados para datos actuales e históricos.
+- Si existen limitaciones en el volumen de datos históricos.
+- Si los archivos están accesibles públicamente.
+- Si existe una API documentada o un mecanismo de acceso estructurado.
+
+Utiliza el siguiente archivo CSV como punto de partida para investigar la estructura de los datos:
+
+https://raw.githubusercontent.com/intasalta/daza/main/364053_daily_station_data.csv
+
+La página original también ofrece un archivo XLS asociado a la estación.
+
+No presupongas que los datos históricos completos están contenidos en un único archivo.
+
+Verifica si el archivo CSV contiene todo el historial, únicamente registros recientes o un período limitado.
+
+Examina también el código fuente y los archivos públicos del repositorio de la página original, cuando estén disponibles.
+
+Si encuentras un mecanismo de acceso más apropiado que el archivo CSV, utiliza la alternativa técnicamente más fiable.
+
+No inventes endpoints ni supongas que existe una API cuando no haya evidencia de ello.
+
+## 4.1. Principio fundamental de integración
+
+La aplicación debe utilizar los datos publicados por la estación real.
+
+No debe reemplazar la fuente por una API meteorológica genérica.
+
+No debe sustituir las observaciones reales por pronósticos meteorológicos.
+
+No debe generar registros ficticios para completar los períodos vacíos.
+
+Si no se puede acceder a la fuente, la aplicación deberá mostrar un mensaje indicando que no fue posible obtener nuevos datos.
+
+Si los datos disponibles están desactualizados, deberá indicarlo claramente.
+
+## 4.2. Arquitectura de integración
+
+Crea un módulo independiente denominado `weather-source`.
+
+Este módulo será responsable de:
+
+- Consultar la fuente original.
+- Descargar los datos.
+- Interpretar los archivos.
+- Normalizar los campos.
+- Validar los valores.
+- Identificar registros duplicados.
+- Registrar las nuevas observaciones.
+- Detectar modificaciones en registros previamente importados, cuando la fuente permita identificarlos.
+- Registrar errores de importación.
+- Informar la última sincronización exitosa.
+
+La integración deberá ejecutarse del lado del servidor.
+
+No dependas exclusivamente de solicitudes realizadas desde el navegador, ya que pueden fallar por restricciones CORS, problemas de conectividad o limitaciones del proveedor.
+
+Utiliza una función de servidor o una ruta API de Next.js para realizar las operaciones de sincronización.
+
+Si la fuente es un archivo público de GitHub, accede al archivo original de forma controlada y comprueba las respuestas HTTP.
+
+No descargues repetidamente el mismo archivo si no ha cambiado.
+
+Utiliza mecanismos como ETag o Last-Modified cuando estén disponibles.
+
+Si no existen estos encabezados, implementa una estrategia de sincronización con frecuencia configurable y un control de contenido para evitar procesamientos innecesarios.
+
+# 5. ESTRATEGIA DE SINCRONIZACIÓN AUTOMÁTICA
+
+La aplicación debe disponer de un sistema de actualización automática.
+
+Implementa las siguientes funciones:
+
+- Sincronización inicial.
+- Sincronización periódica.
+- Sincronización manual autorizada.
+- Consulta de la última sincronización.
+- Registro de errores.
+- Detección de cambios.
+- Prevención de duplicados.
+- Recuperación ante fallos.
+- Reintentos controlados.
+- Actualización de los indicadores del dashboard.
+
+El administrador podrá establecer la frecuencia de sincronización dentro de los límites permitidos por la infraestructura.
+
+No supongas que la fuente publica una nueva medición cada cinco minutos simplemente porque el archivo contenga observaciones con esa separación temporal.
+
+La frecuencia de actualización de la aplicación debe definirse según la frecuencia real de publicación de la fuente.
+
+## 5.1. Compatibilidad con Vercel
+
+No utilices procesos permanentes que requieran mantener un servidor encendido continuamente.
+
+Implementa la sincronización mediante tareas programadas compatibles con Vercel, por ejemplo, Cron Jobs, o mediante otro mecanismo programado fiable.
+
+Si se utilizan tareas programadas:
+
+- Configura la ejecución periódica.
+- Protege el endpoint de sincronización.
+- Utiliza un secreto de ejecución almacenado como variable de entorno.
+- Valida la autorización en el servidor.
+- Registra cada ejecución.
+- Evita importaciones simultáneas conflictivas.
+- Controla los tiempos máximos de ejecución.
+- Divide la importación en lotes si fuera necesario.
+
+Verifica los límites vigentes del plan de Vercel y de la base de datos elegida.
+
+Si la frecuencia de actualización necesaria supera los límites disponibles, documenta una alternativa compatible.
+
+No afirmes que existe una sincronización automática si solamente se actualiza cuando un usuario abre la página.
+
+# 6. IMPORTACIÓN DEL HISTORIAL METEOROLÓGICO
+
+La aplicación debe poder recuperar los datos históricos disponibles en la fuente original.
+
+Cuando el formato lo permita, importa los registros con su fecha y hora de observación originales.
+
+No asignes a todas las mediciones la fecha y hora de importación.
+
+Distingue entre:
+
+- Fecha y hora de observación.
+- Fecha y hora de publicación en la fuente, si está disponible.
+- Fecha y hora de importación.
+- Fecha y hora de última modificación local.
+
+La importación inicial deberá:
+
+1. Identificar los archivos disponibles.
+2. Analizar su estructura.
+3. Detectar los períodos cubiertos.
+4. Leer los encabezados.
+5. Interpretar los tipos de datos.
+6. Convertir los valores a formatos consistentes.
+7. Detectar valores faltantes.
+8. Identificar registros duplicados.
+9. Guardar las observaciones válidas.
+10. Registrar los errores.
+11. Generar un resumen de la importación.
+
+Si la fuente permite descargar varios períodos, importa cada uno de manera controlada.
+
+Si el historial disponible no cubre un período solicitado, informa qué fechas tienen datos y cuáles no.
+
+No inventes mediciones para cubrir períodos sin información.
+
+# 7. VARIABLES METEOROLÓGICAS
+
+Aprovecha todas las variables disponibles en la fuente original.
+
+El archivo CSV inicial presenta campos asociados con temperatura, sensación térmica, punto de rocío, humedad, déficit de presión de vapor, radiación solar, índice UV, precipitaciones, viento y presión atmosférica.
+
+El sistema deberá reconocer los encabezados originales y normalizarlos a nombres internos consistentes.
+
+## 7.1. Temperatura exterior
+
+Registrar y mostrar:
+
+- Temperatura en °C.
+- Temperatura mínima del período, cuando esté disponible.
+- Temperatura máxima del período, cuando esté disponible.
+- Temperatura media calculada.
+- Variación temporal.
+- Fecha y hora de cada observación.
+
+Distingue entre valores medidos y estadísticas calculadas.
+
+## 7.2. Sensación térmica
+
+Mostrar la sensación térmica en °C cuando esté disponible.
+
+Permitir comparar la temperatura exterior con la sensación térmica.
+
+No recalcules automáticamente este valor si la fuente ya lo proporciona, salvo que se implemente un cálculo alternativo claramente identificado.
+
+## 7.3. Punto de rocío
+
+Mostrar:
+
+- Punto de rocío en °C.
+- Evolución temporal.
+- Comparación con la temperatura.
+- Estadísticas por período.
+
+## 7.4. Humedad relativa
+
+Mostrar:
+
+- Humedad relativa en porcentaje.
+- Valores mínimos y máximos.
+- Promedios por período.
+- Evolución horaria, diaria, semanal, mensual y anual.
+
+## 7.5. Déficit de presión de vapor
+
+Utiliza el valor de VPD disponible en la fuente.
+
+Muestra el déficit de presión de vapor en kPa.
+
+Incluye gráficos de evolución y comparaciones con temperatura y humedad.
+
+Añade una explicación educativa sobre su utilidad en el análisis de condiciones ambientales y vegetales.
+
+## 7.6. Radiación solar
+
+Mostrar:
+
+- Radiación solar en W/m².
+- Valor actual disponible.
+- Máximo registrado.
+- Evolución temporal.
+- Promedios por período, cuando resulten significativos.
+
+No confundas potencia instantánea de radiación con energía solar acumulada.
+
+Si se calcula energía acumulada a partir de una serie temporal, documenta el método de integración y sus limitaciones.
+
+## 7.7. Índice UV
+
+Mostrar el índice UV cuando esté disponible.
+
+Incluye una escala visual explicativa y una descripción del nivel correspondiente.
+
+Aclara que el índice UV describe el nivel de radiación ultravioleta y no representa directamente la temperatura.
+
+## 7.8. Precipitaciones
+
+La fuente contiene campos relacionados con:
+
+- Intensidad de lluvia en mm/h.
+- Lluvia diaria.
+- Lluvia por evento.
+- Lluvia horaria.
+- Acumulación de 24 horas.
+- Acumulación semanal.
+- Acumulación mensual.
+- Acumulación anual.
+
+Conserva la distinción entre estos campos.
+
+No sumes acumulaciones diarias, semanales o mensuales como si fueran precipitaciones independientes.
+
+No sumes registros acumulados de 24 horas que se superpongan.
+
+Diferencia entre:
+
+- Intensidad de precipitación.
+- Precipitación durante un intervalo.
+- Acumulación diaria.
+- Acumulación mensual.
+- Acumulación anual.
+
+Si el archivo contiene una acumulación calculada por el sensor, conserva su valor original e identifica su naturaleza.
+
+## 7.9. Velocidad del viento
+
+Mostrar:
+
+- Velocidad del viento en km/h.
+- Ráfagas en km/h.
+- Velocidad máxima del período.
+- Promedios por período.
+- Evolución temporal.
+
+Distingue la velocidad del viento de la velocidad de las ráfagas.
+
+## 7.10. Dirección del viento
+
+Mostrar:
+
+- Dirección en grados.
+- Dirección cardinal.
+- Rosa de los vientos.
+- Frecuencia de cada dirección.
+- Dirección predominante durante el período.
+
+La dirección meteorológica indica de dónde proviene el viento.
+
+Cuando el sensor indique calma, dirección variable o ausencia de datos, representa correctamente el estado correspondiente.
+
+No calcules la dirección promedio utilizando una media aritmética convencional de grados.
+
+## 7.11. Presión atmosférica
+
+La fuente puede proporcionar presión relativa y absoluta.
+
+Identifica correctamente los campos originales y documenta su interpretación.
+
+No los intercambies ni los mezcles en una misma serie.
+
+Muestra:
+
+- Presión disponible en hPa.
+- Evolución temporal.
+- Mínimos y máximos.
+- Promedios.
+- Tendencias.
+
+Antes de etiquetar definitivamente la presión relativa como presión de estación o la absoluta como presión al nivel del mar, verifica la definición empleada por la fuente y el fabricante del sensor.
+
+# 8. ESTADO DEL CIELO
+
+La aplicación debe permitir visualizar el estado del cielo mediante tres categorías principales:
+
+- Soleado.
+- Seminublado.
+- Nublado.
+
+Sin embargo, no inventes estos estados si no están disponibles explícitamente en la fuente original.
+
+Si la fuente no proporciona una clasificación directa del cielo, utiliza uno de estos mecanismos:
+
+1. Registrar el estado manualmente mediante observaciones autorizadas.
+2. Incorporar una clasificación calculada a partir de radiación solar únicamente si se implementa un método validado, documentado y configurable.
+3. Mostrar «Estado del cielo no disponible» cuando no existan datos suficientes.
+
+Si se utiliza una clasificación calculada, identifícala como estimación y no como una observación directa del sensor.
+
+La aplicación debe diferenciar claramente entre:
+
+- Dato medido.
+- Dato importado.
+- Dato calculado.
+- Observación manual.
+- Estimación.
+
+# 9. DASHBOARD PRINCIPAL
+
+Diseña una interfaz moderna, científica y visualmente atractiva.
+
+La pantalla principal debe mostrar el nombre:
+
+**Proyecto Estación Meteorológica Colegio 5085**
+
+Subtítulo:
+
+Datos meteorológicos en tiempo real e históricos para la investigación y el aprendizaje.
+
+Incorpora tarjetas con las variables disponibles.
+
+Organiza el dashboard en secciones.
+
+### Estado de la estación
+
+Mostrar:
+
+- Identificación de la estación.
+- Ubicación.
+- Estado de la fuente de datos.
+- Última observación disponible.
+- Última sincronización exitosa.
+- Antigüedad de los datos.
+- Cantidad de registros históricos.
+
+Estados de conexión:
+
+- Actualizado.
+- Actualización pendiente.
+- Datos desactualizados.
+- Fuente no disponible.
+
+Los estados deben basarse en comprobaciones reales.
+
+### Variables meteorológicas
+
+Mostrar tarjetas para:
+
+- Temperatura.
+- Sensación térmica.
+- Humedad.
+- Presión.
+- Precipitación.
+- Velocidad del viento.
+- Dirección del viento.
+- Radiación solar.
+- Índice UV.
+- Punto de rocío.
+- Déficit de presión de vapor.
+
+Si una variable no está disponible, mostrar «Sin datos disponibles».
+
+No reemplazar los valores faltantes por ceros.
+
+### Gráficos destacados
+
+Incluir gráficos de:
+
+- Evolución de la temperatura.
+- Evolución de la humedad.
+- Presión atmosférica.
+- Precipitaciones.
+- Velocidad del viento.
+- Radiación solar.
+- Dirección del viento.
+
+Los gráficos deberán utilizar datos reales almacenados en la base de datos.
+
+# 10. SISTEMA DE GRÁFICOS ESTADÍSTICOS
+
+Crea un módulo denominado:
+
+**Análisis Estadístico Meteorológico**
+
+Debe permitir analizar las mediciones por:
+
+- Hora.
+- Día.
+- Semana.
+- Mes.
+- Año.
+
+También debe permitir seleccionar un rango de fechas personalizado.
+
+Incorpora accesos rápidos:
+
+- Últimas 24 horas.
+- Últimas 48 horas.
+- Últimos 7 días.
+- Últimos 30 días.
+- Mes actual.
+- Mes anterior.
+- Últimos 12 meses.
+- Año actual.
+- Año anterior.
+- Todo el historial disponible.
+
+La opción «Todo el historial disponible» debe utilizar el período realmente almacenado, sin asumir que existen registros desde una fecha determinada.
+
+## 10.1. Gráficos de líneas
+
+Utiliza gráficos de líneas para:
+
+- Temperatura.
+- Sensación térmica.
+- Humedad.
+- Presión.
+- Punto de rocío.
+- Viento.
+- Radiación solar.
+- Índice UV.
+- Déficit de presión de vapor.
+
+Permite seleccionar las variables que se desean comparar.
+
+Incluye información emergente con fecha, hora, valor y unidad.
+
+## 10.2. Gráficos de barras
+
+Utiliza gráficos de barras para:
+
+- Precipitaciones por hora.
+- Precipitaciones por día.
+- Acumulación mensual.
+- Acumulación anual.
+- Distribución de estados del cielo.
+- Frecuencia de direcciones del viento.
+
+## 10.3. Gráficos comparativos
+
+Permite comparar:
+
+- Temperatura y humedad.
+- Temperatura y punto de rocío.
+- Temperatura y sensación térmica.
+- Radiación solar y temperatura.
+- Presión y viento.
+- Humedad y VPD.
+- Precipitación y humedad.
+
+Utiliza escalas independientes cuando las unidades sean diferentes.
+
+No presentes una correlación como prueba de causalidad.
+
+## 10.4. Estadísticas descriptivas
+
+Calcular:
+
+- Cantidad de observaciones.
+- Cantidad de datos faltantes.
+- Promedio.
+- Mediana.
+- Mínimo.
+- Máximo.
+- Rango.
+- Desviación estándar.
+- Variación respecto del período anterior.
+
+Calcula cada estadística según el tipo de variable.
+
+Para la dirección del viento, utiliza métodos de estadística circular.
+
+Para la lluvia, diferencia entre mediciones por intervalo y acumulaciones.
+
+Para los valores máximos y mínimos, identifica el momento de observación correspondiente.
+
+No extrapoles valores para completar intervalos sin datos.
+
+# 11. PANEL ADMINISTRATIVO
+
+Crea un panel privado que permita administrar el funcionamiento de la aplicación.
+
+Debe incluir:
+
+1. Resumen general.
+2. Estado de sincronización.
+3. Historial meteorológico.
+4. Registros importados.
+5. Observaciones manuales.
+6. Gestión de usuarios.
+7. Configuración de la fuente.
+8. Reglas de validación.
+9. Informes.
+10. Auditoría.
+11. Exportación de datos.
+12. Copias de seguridad.
+13. Configuración general.
+
+## 11.1. Gestión de sincronización
+
+El administrador podrá:
+
+- Ejecutar una sincronización manual.
+- Consultar la última sincronización.
+- Ver la cantidad de registros importados.
+- Consultar errores.
+- Consultar la antigüedad de los datos.
+- Verificar la disponibilidad de la fuente.
+- Consultar el último archivo procesado.
+- Consultar los períodos históricos disponibles.
+
+El sistema deberá impedir que una sincronización fallida sobrescriba datos válidos con registros vacíos o incompletos.
+
+Si la fuente deja de funcionar, conservar el último conjunto de datos válido.
+
+## 11.2. Gestión de observaciones manuales
+
+Permite incorporar observaciones que no estén disponibles en la fuente automática.
+
+Cada registro deberá incluir:
+
+- Fecha y hora de observación.
+- Usuario responsable.
+- Variables registradas.
+- Observaciones.
+- Origen del dato.
+- Fecha de carga.
+- Estado de validación.
+
+Los datos manuales deben identificarse claramente y mantenerse diferenciados de los datos automáticos.
+
+## 11.3. Protección de datos importados
+
+Por defecto, los registros procedentes de la estación automática no podrán modificarse directamente desde el formulario manual.
+
+Si un dato importado presenta un error, registra una corrección mediante un mecanismo de revisión que conserve:
+
+- El valor original.
+- El valor corregido.
+- El motivo.
+- El usuario responsable.
+- La fecha de corrección.
+
+No alteres silenciosamente el valor original.
+
+# 12. ACCESOS Y SEGURIDAD
+
+Implementa tres niveles de acceso.
+
+### Visitante
+
+Podrá consultar:
+
+- Dashboard público.
+- Datos meteorológicos disponibles.
+- Gráficos.
+- Estadísticas.
+- Informes públicos.
+
+### Operador
+
+Clave inicial de acceso solicitada:
+
+alumno5085
+
+Permite utilizarla como mecanismo inicial de acceso de operadores únicamente si la plataforma admite una implementación segura.
+
+Se recomienda asociarla a cuentas individuales para identificar quién realizó cada acción.
+
+Los operadores podrán:
+
+- Registrar observaciones manuales.
+- Consultar los datos.
+- Consultar el historial autorizado.
+- Generar informes permitidos.
+
+### Administrador
+
+Contraseña inicial solicitada:
+
+administrador5085
+
+La contraseña debe establecerse de forma segura durante la configuración inicial.
+
+No la incluyas directamente en el frontend ni en archivos públicos.
+
+El administrador podrá:
+
+- Gestionar usuarios.
+- Configurar la fuente.
+- Ejecutar sincronizaciones manuales.
+- Administrar observaciones.
+- Configurar permisos.
+- Consultar auditorías.
+- Exportar datos completos.
+- Administrar las configuraciones del sistema.
+
+Utiliza autenticación real, roles, protección de rutas, validación en el servidor y políticas de acceso a la base de datos.
+
+No almacenes contraseñas en texto plano.
+
+No expongas secretos de Supabase ni credenciales de servicios externos.
+
+# 13. BASE DE DATOS
+
+Utiliza PostgreSQL mediante Supabase.
+
+Crea, como mínimo, las siguientes tablas:
+
+### stations
+
+Contendrá los datos institucionales y de ubicación de la estación.
+
+### weather_observations
+
+Almacenará las observaciones normalizadas.
+
+Campos sugeridos:
+
+- id.
+- station_id.
+- source.
+- source_record_id.
+- observed_at.
+- imported_at.
+- created_at.
+- updated_at.
+- temperature_c.
+- feels_like_c.
+- dew_point_c.
+- relative_humidity_pct.
+- vapor_pressure_deficit_kpa.
+- solar_radiation_wm2.
+- uv_index.
+- precipitation_rate_mmh.
+- precipitation_daily_mm.
+- precipitation_event_mm.
+- precipitation_hourly_mm.
+- precipitation_24h_mm.
+- precipitation_weekly_mm.
+- precipitation_monthly_mm.
+- precipitation_yearly_mm.
+- wind_speed_kmh.
+- wind_gust_kmh.
+- wind_direction_deg.
+- wind_direction_10min_deg.
+- pressure_relative_hpa.
+- pressure_absolute_hpa.
+- sky_condition.
+- notes.
+- validation_status.
+- deleted_at.
+
+Los nombres de campos son orientativos. Ajusta el esquema a la estructura real de la fuente y documenta el mapeo de cada variable.
+
+Todos los campos opcionales deben admitir valores nulos.
+
+### sync_runs
+
+Registrará cada sincronización.
+
+Campos:
+
+- id.
+- started_at.
+- completed_at.
+- status.
+- source_url.
+- records_found.
+- records_inserted.
+- records_updated.
+- records_skipped.
+- records_rejected.
+- error_message.
+- content_hash.
+
+### profiles
+
+Almacenará los perfiles de los usuarios.
+
+### audit_logs
+
+Registrará las modificaciones y acciones administrativas.
+
+### manual_observations
+
+Podrá utilizarse para separar las observaciones manuales si la arquitectura lo considera conveniente.
+
+### data_corrections
+
+Almacenará las correcciones auditables de los datos originales.
+
+Crea índices para consultar rápidamente las mediciones por estación y fecha.
+
+Implementa migraciones versionadas.
+
+Evita duplicados mediante una estrategia idempotente.
+
+Cuando la fuente proporcione un identificador estable, utilízalo.
+
+Si no existe, diseña una clave de identificación a partir de los campos disponibles y documenta sus limitaciones.
+
+No identifiques automáticamente dos observaciones como iguales solo porque tienen valores meteorológicos similares.
+
+# 14. NORMALIZACIÓN Y CALIDAD DE DATOS
+
+La integración deberá reconocer correctamente los encabezados originales.
+
+Implementa un adaptador que transforme los campos de la fuente a un modelo interno estable.
+
+El adaptador debe:
+
+- Interpretar fechas y horas.
+- Convertir los valores numéricos.
+- Reconocer los marcadores de datos faltantes.
+- Conservar los valores originales relevantes.
+- Detectar filas incompletas.
+- Detectar valores inválidos.
+- Diferenciar cero de ausencia de datos.
+- Registrar advertencias.
+- Mantener trazabilidad de la importación.
+
+No rechaces automáticamente valores meteorológicos extremos si pueden ser legítimos.
+
+Marca los valores sospechosos para revisión.
+
+No conviertas valores faltantes en cero.
+
+No cambies silenciosamente las unidades.
+
+No interpretes un valor acumulado como una medición instantánea.
+
+# 15. INFORMES
+
+Implementa informes automáticos para diferentes períodos.
+
+### Informe diario
+
+Incluir:
+
+- Temperatura mínima, máxima y media.
+- Sensación térmica.
+- Humedad mínima, máxima y media.
+- Presión atmosférica.
+- Precipitaciones.
+- Viento.
+- Radiación solar.
+- Índice UV.
+- Cantidad de observaciones.
+- Datos faltantes.
+
+### Informe semanal
+
+Incluir:
+
+- Evolución diaria.
+- Comparación de variables.
+- Acumulación de lluvia.
+- Temperaturas extremas.
+- Tendencias observadas.
+
+### Informe mensual
+
+Incluir:
+
+- Estadísticas generales.
+- Gráficos.
+- Comparación diaria.
+- Precipitaciones acumuladas.
+- Distribución de temperaturas.
+- Datos faltantes.
+
+### Informe anual
+
+Incluir:
+
+- Evolución mensual.
+- Comparación de meses.
+- Temperaturas extremas observadas.
+- Precipitaciones acumuladas.
+- Tendencias.
+- Cantidad de registros disponibles.
+- Cobertura temporal.
+
+Todos los informes deben identificar el período real cubierto por los datos.
+
+No afirmes que el período está completo si existen intervalos sin observaciones.
+
+# 16. EXPORTACIÓN DE DATOS
+
+Permite exportar los resultados en:
+
+- CSV.
+- XLSX.
+- PDF.
+- PNG para los gráficos, cuando sea técnicamente posible.
+
+Los archivos deben respetar los filtros aplicados.
+
+Los informes deberán indicar:
+
+- Nombre de la aplicación.
+- Nombre de la estación.
+- Período analizado.
+- Fecha de generación.
+- Fuente de los datos.
+- Cantidad de registros.
+- Unidades.
+- Metodología estadística.
+- Datos faltantes.
+
+Los datos exportados deberán diferenciar las observaciones automáticas, las observaciones manuales y las correcciones.
+
+# 17. MÓDULO EDUCATIVO
+
+Incorpora una sección denominada:
+
+**Laboratorio de Investigación Meteorológica**
+
+Este módulo estará destinado a docentes y estudiantes.
+
+Debe permitir explorar preguntas científicas mediante datos reales.
+
+Ejemplos:
+
+- ¿Cómo varía la temperatura durante el día?
+- ¿Cuál es la diferencia entre temperatura y sensación térmica?
+- ¿Cómo se relacionan la humedad y el punto de rocío?
+- ¿Qué días registraron mayores precipitaciones?
+- ¿Cuál fue la radiación solar máxima observada?
+- ¿Qué dirección del viento predominó durante una semana?
+- ¿Cómo cambia la presión atmosférica?
+- ¿Qué relaciones se observan entre temperatura y humedad?
+- ¿Cómo varía el VPD durante el día?
+
+Incluye herramientas para:
+
+- Seleccionar variables.
+- Elegir períodos.
+- Comparar datos.
+- Crear tablas.
+- Descargar resultados.
+- Consultar definiciones.
+- Interpretar gráficos.
+- Formular hipótesis.
+
+Las explicaciones educativas deben distinguir entre correlación y causalidad.
+
+Las conclusiones deben basarse exclusivamente en los datos disponibles.
+
+# 18. DISEÑO VISUAL
+
+Utiliza un diseño profesional y moderno.
+
+Paleta sugerida:
+
+- Azul oscuro para encabezados.
+- Azul claro para variables atmosféricas.
+- Verde para indicadores normales.
+- Amarillo para advertencias.
+- Rojo para alertas de mayor severidad.
+- Fondo claro para facilitar la lectura.
+
+Incluye iconos meteorológicos.
+
+La interfaz debe ser completamente responsive.
+
+Debe funcionar correctamente en:
+
+- Computadoras.
+- Tabletas.
+- Teléfonos Android.
+- Teléfonos iPhone.
+
+Utiliza componentes reutilizables.
+
+Evita interfaces saturadas.
+
+Los gráficos deben permitir consultar valores específicos y comprender las unidades.
+
+Incluye accesibilidad mediante teclado, contraste adecuado y etiquetas comprensibles.
+
+# 19. TECNOLOGÍAS
+
+Utiliza una arquitectura compatible con Vercel.
+
+Tecnologías recomendadas:
+
+- Next.js.
+- React.
+- TypeScript.
+- Tailwind CSS.
+- Recharts.
+- Supabase PostgreSQL.
+- Supabase Auth.
+- Zod.
+- React Hook Form.
+- Biblioteca de exportación XLSX.
+- Biblioteca de generación de PDF.
+- Git.
+- Vercel.
+
+Selecciona versiones estables y compatibles.
+
+La integración con la fuente debe ejecutarse en el servidor.
+
+Los cálculos estadísticos deben realizarse preferentemente en PostgreSQL o mediante servicios de servidor, evitando descargar todo el historial al navegador.
+
+# 20. DESPLIEGUE EN VERCEL
+
+Prepara el proyecto para desplegarse correctamente.
+
+Incluye:
+
+- Código fuente.
+- package.json.
+- Configuración de Next.js.
+- Configuración TypeScript.
+- Migraciones SQL.
+- Políticas de seguridad.
+- Variables de entorno de ejemplo.
+- Documentación de instalación.
+- Configuración de tareas programadas.
+- Pruebas automatizadas.
+- Manual de usuario.
+- Manual de administrador.
+
+Crea un archivo `.env.example`.
+
+Incluye únicamente las variables necesarias para la implementación.
+
+Por ejemplo:
+
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+WEATHER_SOURCE_URL=
+WEATHER_SYNC_SECRET=
+
+Adapta los nombres a la arquitectura finalmente implementada.
+
+La clave de servicio y el secreto de sincronización deben permanecer exclusivamente en el servidor.
+
+No incluyas secretos reales en el repositorio.
+
+Documenta cómo configurar las variables en Vercel.
+
+Incluye los pasos para ejecutar las migraciones, crear el administrador y verificar la integración meteorológica.
+
+No afirmes que la aplicación está desplegada si no se ha publicado realmente.
+
+# 21. PRUEBAS OBLIGATORIAS
+
+Implementa pruebas automatizadas para comprobar:
+
+### Fuente meteorológica
+
+- Acceso al archivo original.
+- Interpretación de encabezados.
+- Conversión de fechas.
+- Conversión numérica.
+- Tratamiento de campos faltantes.
+- Tratamiento de archivos vacíos.
+- Tratamiento de errores HTTP.
+- Detección de duplicados.
+- Importación idempotente.
+- Conservación del último conjunto válido ante fallos.
+
+### Estadísticas
+
+- Promedios.
+- Mínimos.
+- Máximos.
+- Agrupación horaria.
+- Agrupación diaria.
+- Agrupación semanal.
+- Agrupación mensual.
+- Agrupación anual.
+- Acumulación de precipitaciones.
+- Estadística circular del viento.
+- Tratamiento de datos faltantes.
+
+### Seguridad
+
+- Autenticación.
+- Autorización.
+- Protección de rutas.
+- Restricciones de operadores.
+- Restricciones de administradores.
+- Protección de variables secretas.
+- Seguridad de la tarea de sincronización.
+
+### Exportación
+
+- CSV.
+- Excel.
+- PDF.
+- Respeto de filtros.
+- Correcta identificación de unidades y fechas.
+
+Utiliza datos sintéticos únicamente en las pruebas y nunca los mezcles con las observaciones reales.
+
+# 22. CRITERIOS DE ACEPTACIÓN
+
+El desarrollo se considerará satisfactorio cuando:
+
+1. La aplicación tenga el nombre correcto.
+2. La fuente original esté identificada y documentada.
+3. La integración obtenga datos reales.
+4. La importación histórica funcione con los archivos disponibles.
+5. Las sincronizaciones sean idempotentes.
+6. Los errores no destruyan datos válidos.
+7. El dashboard muestre la última observación disponible.
+8. La antigüedad de los datos sea visible.
+9. Los gráficos utilicen registros reales.
+10. Los filtros temporales funcionen.
+11. Los cálculos estadísticos sean correctos.
+12. Las precipitaciones se interpreten correctamente.
+13. Las observaciones manuales estén diferenciadas.
+14. Los informes puedan descargarse.
+15. La autenticación sea segura.
+16. Los roles se verifiquen en el servidor.
+17. La base de datos tenga políticas de acceso adecuadas.
+18. La aplicación sea responsive.
+19. El proyecto sea compatible con Vercel.
+20. Las instrucciones de despliegue estén documentadas.
+
+# 23. ORDEN DE DESARROLLO
+
+Desarrolla el proyecto siguiendo estas etapas:
+
+ETAPA 1. Analizar la fuente meteorológica original.
+
+ETAPA 2. Identificar los archivos, campos y períodos disponibles.
+
+ETAPA 3. Diseñar el modelo de datos.
+
+ETAPA 4. Implementar la importación y normalización.
+
+ETAPA 5. Configurar PostgreSQL y la autenticación.
+
+ETAPA 6. Implementar la sincronización automática.
+
+ETAPA 7. Desarrollar el dashboard público.
+
+ETAPA 8. Desarrollar los gráficos estadísticos.
+
+ETAPA 9. Desarrollar el panel administrativo.
+
+ETAPA 10. Implementar informes y exportaciones.
+
+ETAPA 11. Implementar el laboratorio educativo.
+
+ETAPA 12. Ejecutar las pruebas.
+
+ETAPA 13. Documentar y preparar el despliegue.
+
+No simules funciones que no estén implementadas.
+
+No inventes resultados de pruebas.
+
+No ocultes limitaciones de la fuente.
+
+Si no se puede acceder a un conjunto de datos, explica el motivo y ofrece un mecanismo alternativo documentado.
+
+# 24. ENTREGA FINAL
+
+Entrega:
+
+1. Aplicación funcional.
+2. Código fuente completo.
+3. Integración con la fuente meteorológica original.
+4. Base de datos.
+5. Migraciones SQL.
+6. Sistema de sincronización.
+7. Dashboard público.
+8. Panel de administración.
+9. Gráficos estadísticos.
+10. Informes descargables.
+11. Exportación de datos.
+12. Manual de usuario.
+13. Manual de administrador.
+14. Instrucciones para Vercel.
+15. Pruebas automatizadas.
+16. Documentación de la fuente de datos.
+17. Lista de limitaciones y mejoras futuras.
+
+**Instrucción final:** comienza analizando técnicamente la página de la estación meteorológica original. Después, implementa la integración real con los archivos disponibles y construye la aplicación completa sobre esa fuente de datos. La prioridad es que el sistema funcione con mediciones reales, preserve la integridad de los datos y pueda desplegarse de manera segura en Vercel.
+
+No entregues únicamente una maqueta visual o un documento de arquitectura. Implementa las funcionalidades, verifica las operaciones y documenta cualquier requisito externo que todavía deba configurarse.
