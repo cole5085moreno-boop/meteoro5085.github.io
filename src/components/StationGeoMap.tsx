@@ -21,9 +21,10 @@ import {
   Sun,
   Navigation,
   Globe2,
+  ExternalLink,
 } from 'lucide-react';
 import type { WeatherObservation, StationConfig } from '../types/weather.ts';
-import { degreesToCardinal } from '../../server/weather-source.ts';
+import { degreesToCardinal, ECOWITT_SHARE_URL } from '../lib/weather-engine.ts';
 
 interface StationGeoMapProps {
   station: StationConfig | null;
@@ -142,6 +143,11 @@ export const StationGeoMap: React.FC<StationGeoMapProps> = ({
               <span class="text-slate-400">Ecowitt ID:</span>
               <span class="text-sky-400 font-bold">364053</span>
             </div>
+            <div class="pt-1 text-center">
+              <a href="${station?.primary_source_url || ECOWITT_SHARE_URL}" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:underline font-sans text-[11px] block text-center">
+                Abrir panel Ecowitt.net &rarr;
+              </a>
+            </div>
           </div>
         </div>
       `;
@@ -149,7 +155,7 @@ export const StationGeoMap: React.FC<StationGeoMapProps> = ({
       marker.bindPopup(popupContent, { offset: [0, -15] });
       markerRef.current = marker;
     }
-  }, [observation, LAT, LNG]);
+  }, [observation, LAT, LNG, station]);
 
   const handleCenter = () => {
     if (mapInstanceRef.current) {
@@ -174,11 +180,22 @@ export const StationGeoMap: React.FC<StationGeoMapProps> = ({
         </div>
 
         {/* Controles del Mapa Satelital */}
-        <div className="flex items-center gap-2 text-xs font-semibold">
+        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-sky-300 border border-slate-700 shadow-xs">
             <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
             <span>Modo Satelital Activo</span>
           </div>
+
+          <a
+            href={station?.primary_source_url || ECOWITT_SHARE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Abrir estación meteorológica oficial en Ecowitt.net"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/60 transition-colors"
+          >
+            <span>Ecowitt en Vivo</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
 
           <button
             onClick={() => setShowDataOverlay(!showDataOverlay)}

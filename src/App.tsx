@@ -315,12 +315,12 @@ export default function App() {
             <span className="font-mono">Zona Horaria: America/Argentina/Salta</span>
             <span aria-hidden="true">·</span>
             <a
-              href="https://intasalta.github.io/ema_5085mm/"
+              href="https://www.ecowitt.net/home/share?authorize=5MMNHG&device_id=YkliaG1nckQ4RFlBZWE5YWFRWEMrZz09"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sky-600 hover:underline"
+              className="inline-flex items-center gap-1 text-sky-600 hover:underline font-semibold"
             >
-              <span>Fuente INTA Salta</span>
+              <span>Fuente Ecowitt.net (En vivo)</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>

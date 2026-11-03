@@ -61,6 +61,7 @@ export interface StationConfig {
   ecowitt_station_id: string;
   timezone: string;
   primary_source_url: string;
+  ecowitt_share_url?: string;
   github_repo_url: string;
   sync_interval_minutes: number;
   auto_sync_enabled: boolean;

@@ -158,7 +158,7 @@ async function loadStaticData(): Promise<{
       started_at: new Date().toISOString(),
       completed_at: new Date().toISOString(),
       status: 'success',
-      source_url: PRIMARY_CSV_URL,
+      source_url: DEFAULT_STATION_CONFIG.primary_source_url,
       records_found: observations.length + rejectedCount,
       records_inserted: observations.length,
       records_updated: 0,
@@ -187,7 +187,7 @@ async function loadStaticData(): Promise<{
         started_at: new Date().toISOString(),
         completed_at: new Date().toISOString(),
         status: 'failed',
-        source_url: PRIMARY_CSV_URL,
+        source_url: DEFAULT_STATION_CONFIG.primary_source_url,
         records_found: staticObservations.length,
         records_inserted: 0,
         records_updated: 0,
@@ -224,6 +224,12 @@ export async function fetchStationStatus(): Promise<{
       signal: AbortSignal.timeout(1500),
     });
     if (data && data.station) {
+      // Asegurar coordenadas exactas solicitadas
+      data.station.latitude = -24.6708;
+      data.station.longitude = -65.0498;
+      if (!data.station.primary_source_url || data.station.primary_source_url.includes('raw.githubusercontent.com')) {
+        data.station.primary_source_url = DEFAULT_STATION_CONFIG.primary_source_url;
+      }
       return data;
     }
   }
@@ -233,7 +239,27 @@ export async function fetchStationStatus(): Promise<{
     await loadStaticData();
   }
 
-  const station = DEFAULT_STATION_CONFIG;
+  let station = { ...DEFAULT_STATION_CONFIG };
+  try {
+    const storedConfigRaw = localStorage.getItem(STORAGE_CONFIG_KEY);
+    if (storedConfigRaw) {
+      const parsedConfig = JSON.parse(storedConfigRaw);
+      station = {
+        ...DEFAULT_STATION_CONFIG,
+        ...parsedConfig,
+        latitude: -24.6708,
+        longitude: -65.0498,
+        primary_source_url:
+          parsedConfig.primary_source_url && !parsedConfig.primary_source_url.includes('raw.githubusercontent.com')
+            ? parsedConfig.primary_source_url
+            : DEFAULT_STATION_CONFIG.primary_source_url,
+        ecowitt_share_url: DEFAULT_STATION_CONFIG.ecowitt_share_url,
+      };
+    }
+  } catch {
+    station = { ...DEFAULT_STATION_CONFIG };
+  }
+
   const latestObs = staticObservations[staticObservations.length - 1] || null;
   const firstObs = staticObservations[0] || null;
 

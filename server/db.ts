@@ -80,13 +80,15 @@ const DEFAULT_STATION_CONFIG: StationConfig = {
   institution: 'Colegio Secundario N.º 5085 «Dr. Mariano Moreno»',
   location: 'General Güemes, provincia de Salta, Argentina',
   address: 'Sarmiento 351, General Güemes, Salta',
-  latitude: -24.670773,
-  longitude: -65.04979,
+  latitude: -24.6708,
+  longitude: -65.0498,
   altitude_m: 695,
   ecowitt_station_id: '364053',
   timezone: 'America/Argentina/Salta',
   primary_source_url:
-    'https://raw.githubusercontent.com/intasalta/daza/main/364053_daily_station_data.csv',
+    'https://www.ecowitt.net/home/share?authorize=5MMNHG&device_id=YkliaG1nckQ4RFlBZWE5YWFRWEMrZz09',
+  ecowitt_share_url:
+    'https://www.ecowitt.net/home/share?authorize=5MMNHG&device_id=YkliaG1nckQ4RFlBZWE5YWFRWEMrZz09',
   github_repo_url: 'https://github.com/intasalta/daza',
   sync_interval_minutes: 15,
   auto_sync_enabled: true,

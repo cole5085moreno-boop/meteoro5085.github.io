@@ -91,12 +91,13 @@ export const StationStatusBanner: React.FC<StationStatusBannerProps> = ({
             <span>Estación Automática Ecowitt ID {station?.ecowitt_station_id || '364053'}</span>
             <span aria-hidden="true">·</span>
             <a
-              href="https://intasalta.github.io/ema_5085mm/"
+              href={station?.primary_source_url || 'https://www.ecowitt.net/home/share?authorize=5MMNHG&device_id=YkliaG1nckQ4RFlBZWE5YWFRWEMrZz09'}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400 hover:underline"
+              title="Abrir panel oficial de la estación en Ecowitt.net"
+              className="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400 font-semibold hover:underline"
             >
-              <span>Fuente INTA Salta</span>
+              <span>Fuente Ecowitt.net (En vivo)</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>

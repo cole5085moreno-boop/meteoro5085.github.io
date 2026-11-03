@@ -14,6 +14,9 @@ import type {
   SyncRun,
 } from '../types/weather.ts';
 
+export const ECOWITT_SHARE_URL =
+  'https://www.ecowitt.net/home/share?authorize=5MMNHG&device_id=YkliaG1nckQ4RFlBZWE5YWFRWEMrZz09';
+
 export const PRIMARY_CSV_URL =
   'https://raw.githubusercontent.com/intasalta/daza/main/364053_daily_station_data.csv';
 
@@ -26,12 +29,13 @@ export const DEFAULT_STATION_CONFIG: StationConfig = {
   institution: 'Colegio Secundario N.º 5085 «Dr. Mariano Moreno»',
   location: 'General Güemes, provincia de Salta, Argentina',
   address: 'Sarmiento 351, General Güemes, Salta',
-  latitude: -24.670773,
-  longitude: -65.04979,
+  latitude: -24.6708,
+  longitude: -65.0498,
   altitude_m: 695,
   ecowitt_station_id: '364053',
   timezone: 'America/Argentina/Salta',
-  primary_source_url: PRIMARY_CSV_URL,
+  primary_source_url: ECOWITT_SHARE_URL,
+  ecowitt_share_url: ECOWITT_SHARE_URL,
   github_repo_url: 'https://github.com/intasalta/daza',
   sync_interval_minutes: 15,
   auto_sync_enabled: true,
@@ -65,7 +69,7 @@ export function degreesToCardinal(deg: number | null): string {
   if (deg === null || deg < 0) return 'Calma / Variable';
   const directions = [
     'N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
-    'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW',
+    'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO',
   ];
   const idx = Math.round(deg / 22.5) % 16;
   return directions[idx];

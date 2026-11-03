@@ -21,6 +21,7 @@ import {
   Lock,
   GitBranch,
   Save,
+  ExternalLink,
 } from 'lucide-react';
 import type {
   StationConfig,
@@ -90,10 +91,12 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   const [configForm, setConfigForm] = useState({
     name: '',
     address: '',
-    latitude: -24.670773,
-    longitude: -65.04979,
+    latitude: -24.6708,
+    longitude: -65.0498,
     altitude_m: 695,
     ecowitt_station_id: '364053',
+    primary_source_url:
+      'https://www.ecowitt.net/home/share?authorize=5MMNHG&device_id=YkliaG1nckQ4RFlBZWE5YWFRWEMrZz09',
     sync_interval_minutes: 15,
   });
 
@@ -112,10 +115,13 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
       setConfigForm({
         name: stationRes.station.name,
         address: stationRes.station.address,
-        latitude: stationRes.station.latitude,
-        longitude: stationRes.station.longitude,
+        latitude: -24.6708,
+        longitude: -65.0498,
         altitude_m: stationRes.station.altitude_m,
         ecowitt_station_id: stationRes.station.ecowitt_station_id,
+        primary_source_url:
+          stationRes.station.primary_source_url ||
+          'https://www.ecowitt.net/home/share?authorize=5MMNHG&device_id=YkliaG1nckQ4RFlBZWE5YWFRWEMrZz09',
         sync_interval_minutes: stationRes.station.sync_interval_minutes,
       });
 
@@ -823,6 +829,31 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                   required
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 font-mono text-slate-800 dark:text-slate-200"
                 />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
+                Dirección URL Fuente de Datos (Ecowitt.net):
+              </label>
+              <input
+                type="url"
+                value={configForm.primary_source_url}
+                onChange={(e) => setConfigForm({ ...configForm, primary_source_url: e.target.value })}
+                required
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 font-mono text-slate-800 dark:text-slate-200"
+              />
+              <div className="mt-1 flex items-center justify-between text-[11px] text-slate-500">
+                <span>Enlace oficial de telemetría de la estación</span>
+                <a
+                  href={configForm.primary_source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sky-600 dark:text-sky-400 hover:underline inline-flex items-center gap-1 font-semibold"
+                >
+                  <span>Abrir panel en Ecowitt</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
               </div>
             </div>
 

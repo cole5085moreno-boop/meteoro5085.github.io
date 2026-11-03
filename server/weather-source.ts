@@ -8,6 +8,9 @@
 import crypto from 'crypto';
 import type { WeatherObservation, SyncRun } from '../src/types/weather.ts';
 
+export const ECOWITT_SHARE_URL =
+  'https://www.ecowitt.net/home/share?authorize=5MMNHG&device_id=YkliaG1nckQ4RFlBZWE5YWFRWEMrZz09';
+
 export const PRIMARY_CSV_URL =
   'https://raw.githubusercontent.com/intasalta/daza/main/364053_daily_station_data.csv';
 
@@ -30,13 +33,13 @@ function parseNumeric(val: string | undefined): number | null {
 }
 
 /**
- * Convierte grados a dirección cardinal (16 rumbos).
+ * Convierte grados a dirección cardinal en español (16 rumbos).
  */
 export function degreesToCardinal(deg: number | null): string {
   if (deg === null || deg < 0) return 'Calma / Variable';
   const directions = [
     'N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
-    'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW',
+    'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO',
   ];
   const idx = Math.round(deg / 22.5) % 16;
   return directions[idx];

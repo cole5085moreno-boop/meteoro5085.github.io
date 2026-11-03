@@ -22,7 +22,7 @@ import {
   Minus,
 } from 'lucide-react';
 import type { WeatherObservation } from '../types/weather.ts';
-import { degreesToCardinal } from '../../server/weather-source.ts';
+import { degreesToCardinal } from '../lib/weather-engine.ts';
 
 interface MetricCardsGridProps {
   observation: WeatherObservation | null;
