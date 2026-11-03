@@ -53,3 +53,25 @@ npm run preview
 ```
 
 Los archivos finales listos para publicar se generarán dentro de la carpeta `dist/`.
+
+---
+
+### 4. Solución al Error de `package-lock.json` en GitHub Actions
+
+Si en tu flujo de GitHub Actions recibes el error:
+> `Error: Dependencies lock file is not found in ... Supported file patterns: package-lock.json,npm-shrinkwrap.json,yarn.lock`
+
+**Causa:**
+El paso `actions/setup-node@v4` tenía activada la opción `cache: 'npm'`, la cual exige obligatoriamente la presencia de `package-lock.json` en la raíz del repositorio.
+
+**Solución aplicada:**
+1. Se ha generado y añadido el archivo `package-lock.json` en la raíz del proyecto.
+2. Se ha actualizado `.github/workflows/deploy.yml` para remover la dependencia estricta de caché y permitir tanto instalaciones reproducibles (`npm ci`) como instalaciones dinámicas de respaldo (`npm install --legacy-peer-deps`).
+
+**Comandos para actualizar tu repositorio en GitHub:**
+```bash
+git add .github/workflows/deploy.yml package-lock.json
+git commit -m "fix(ci): corregir despliegue en GitHub Pages y añadir package-lock.json"
+git push origin main
+```
+
