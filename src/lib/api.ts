@@ -30,8 +30,39 @@ const STORAGE_MANUAL_KEY = 'ema5085_local_manual';
 const STORAGE_CORR_KEY = 'ema5085_local_corrections';
 const STORAGE_CONFIG_KEY = 'ema5085_local_config';
 
-// Detectar si el backend API está disponible
-let isServerAvailable: boolean | null = null;
+// Detectar entorno estático (GitHub Pages u host sin backend Express)
+const isStaticHost =
+  typeof window !== 'undefined' &&
+  (window.location.hostname.endsWith('github.io') ||
+    window.location.protocol === 'file:' ||
+    (window.location.hostname === 'localhost' && window.location.port === '4173'));
+
+// Si estamos en un host puramente estático, no intentar consultar /api
+let isServerAvailable: boolean = !isStaticHost;
+
+/**
+ * Fetch seguro para endpoints de API.
+ * Valida Content-Type JSON y previene excepciones de sintaxis al recibir HTML.
+ */
+async function safeJsonFetch<T = any>(
+  input: RequestInfo | URL,
+  init?: RequestInit
+): Promise<T | null> {
+  if (!isServerAvailable) return null;
+  try {
+    const res = await fetch(input, init);
+    const contentType = res.headers.get('content-type') || '';
+    if (res.ok && contentType.includes('application/json')) {
+      return (await res.json()) as T;
+    }
+    // Si responde HTML (404/SPA redirect) o falla el código HTTP, marcar backend como no disponible
+    isServerAvailable = false;
+    return null;
+  } catch {
+    isServerAvailable = false;
+    return null;
+  }
+}
 
 // Caché en memoria para modo estático (GitHub Pages)
 let staticObservations: WeatherObservation[] = [];
@@ -187,16 +218,13 @@ export async function fetchStationStatus(): Promise<{
   first_record_date: string | null;
   last_record_date: string | null;
 }> {
-  // 1. Probar backend en modo servidor
-  if (isServerAvailable !== false) {
-    try {
-      const res = await fetch('/api/station', { signal: AbortSignal.timeout(1500) });
-      if (res.ok) {
-        isServerAvailable = true;
-        return res.json();
-      }
-    } catch {
-      isServerAvailable = false;
+  // 1. Probar backend en modo servidor si está disponible
+  if (isServerAvailable) {
+    const data = await safeJsonFetch<any>('/api/station', {
+      signal: AbortSignal.timeout(1500),
+    });
+    if (data && data.station) {
+      return data;
     }
   }
 
@@ -239,13 +267,12 @@ export async function fetchStationStatus(): Promise<{
 
 export async function updateStationConfig(updates: Partial<StationConfig>): Promise<StationConfig> {
   if (isServerAvailable) {
-    const res = await fetch('/api/station', {
+    const d = await safeJsonFetch<{ station: StationConfig }>('/api/station', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify(updates),
     });
-    if (res.ok) {
-      const d = await res.json();
+    if (d?.station) {
       return d.station;
     }
   }
@@ -262,20 +289,17 @@ export async function fetchObservations(params?: {
   limit?: number;
 }): Promise<WeatherObservation[]> {
   if (isServerAvailable) {
-    try {
-      const q = new URLSearchParams();
-      if (params?.range) q.set('range', params.range);
-      if (params?.start) q.set('start', params.start);
-      if (params?.end) q.set('end', params.end);
-      if (params?.limit) q.set('limit', String(params.limit));
+    const q = new URLSearchParams();
+    if (params?.range) q.set('range', params.range);
+    if (params?.start) q.set('start', params.start);
+    if (params?.end) q.set('end', params.end);
+    if (params?.limit) q.set('limit', String(params.limit));
 
-      const res = await fetch(`/api/observations?${q.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        return data.observations;
-      }
-    } catch {
-      isServerAvailable = false;
+    const data = await safeJsonFetch<{ observations: WeatherObservation[] }>(
+      `/api/observations?${q.toString()}`
+    );
+    if (data?.observations) {
+      return data.observations;
     }
   }
 
@@ -323,17 +347,13 @@ export async function fetchStats(params?: {
   };
 }> {
   if (isServerAvailable) {
-    try {
-      const q = new URLSearchParams();
-      if (params?.range) q.set('range', params.range);
-      if (params?.start) q.set('start', params.start);
-      if (params?.end) q.set('end', params.end);
+    const q = new URLSearchParams();
+    if (params?.range) q.set('range', params.range);
+    if (params?.start) q.set('start', params.start);
+    if (params?.end) q.set('end', params.end);
 
-      const res = await fetch(`/api/stats?${q.toString()}`);
-      if (res.ok) return res.json();
-    } catch {
-      isServerAvailable = false;
-    }
+    const data = await safeJsonFetch<any>(`/api/stats?${q.toString()}`);
+    if (data && data.stats) return data;
   }
 
   // Computación estadística en el cliente para GitHub Pages
@@ -374,16 +394,16 @@ export async function triggerManualSync(): Promise<{
   total_records: number;
 }> {
   if (isServerAvailable) {
-    try {
-      const res = await fetch('/api/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({}),
-      });
-      if (res.ok) return res.json();
-    } catch {
-      isServerAvailable = false;
-    }
+    const data = await safeJsonFetch<{
+      success: boolean;
+      run: SyncRun;
+      total_records: number;
+    }>('/api/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({}),
+    });
+    if (data && data.run) return data;
   }
 
   // Sincronización directa en el cliente
@@ -403,15 +423,11 @@ export async function triggerHistoricalSync(): Promise<{
   total_now: number;
 }> {
   if (isServerAvailable) {
-    try {
-      const res = await fetch('/api/sync/historical', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      });
-      if (res.ok) return res.json();
-    } catch {
-      isServerAvailable = false;
-    }
+    const data = await safeJsonFetch<any>('/api/sync/historical', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    });
+    if (data && data.success) return data;
   }
 
   // Recuperar commits históricos directamente desde la API pública de GitHub
@@ -465,15 +481,8 @@ export async function triggerHistoricalSync(): Promise<{
 
 export async function fetchSyncHistory(): Promise<SyncRun[]> {
   if (isServerAvailable) {
-    try {
-      const res = await fetch('/api/sync/history');
-      if (res.ok) {
-        const data = await res.json();
-        return data.runs;
-      }
-    } catch {
-      isServerAvailable = false;
-    }
+    const data = await safeJsonFetch<{ runs: SyncRun[] }>('/api/sync/history');
+    if (data?.runs) return data.runs;
   }
 
   return staticLastSync ? [staticLastSync] : [];
@@ -484,19 +493,17 @@ export async function loginUser(password: string): Promise<{
   token: string;
 }> {
   if (isServerAvailable) {
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        saveAuthSession(data.token, data.user);
-        return data;
-      }
-    } catch {
-      isServerAvailable = false;
+    const data = await safeJsonFetch<{
+      user: { username: string; name: string; role: 'admin' | 'operator'; email: string };
+      token: string;
+    }>('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    if (data?.token && data?.user) {
+      saveAuthSession(data.token, data.user);
+      return data;
     }
   }
 
@@ -537,19 +544,12 @@ export async function submitManualObservation(obs: {
   notes: string;
 }): Promise<ManualObservation> {
   if (isServerAvailable) {
-    try {
-      const res = await fetch('/api/manual-observations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify(obs),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        return data.observation;
-      }
-    } catch {
-      isServerAvailable = false;
-    }
+    const data = await safeJsonFetch<{ observation: ManualObservation }>('/api/manual-observations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify(obs),
+    });
+    if (data?.observation) return data.observation;
   }
 
   const newObs: ManualObservation = {
@@ -575,19 +575,12 @@ export async function submitDataCorrection(correction: {
   reason: string;
 }): Promise<DataCorrection> {
   if (isServerAvailable) {
-    try {
-      const res = await fetch('/api/corrections', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify(correction),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        return data.correction;
-      }
-    } catch {
-      isServerAvailable = false;
-    }
+    const data = await safeJsonFetch<{ correction: DataCorrection }>('/api/corrections', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify(correction),
+    });
+    if (data?.correction) return data.correction;
   }
 
   const newCorr: DataCorrection = {
@@ -615,15 +608,8 @@ export async function submitDataCorrection(correction: {
 
 export async function fetchCorrections(): Promise<DataCorrection[]> {
   if (isServerAvailable) {
-    try {
-      const res = await fetch('/api/corrections');
-      if (res.ok) {
-        const data = await res.json();
-        return data.corrections;
-      }
-    } catch {
-      isServerAvailable = false;
-    }
+    const data = await safeJsonFetch<{ corrections: DataCorrection[] }>('/api/corrections');
+    if (data?.corrections) return data.corrections;
   }
 
   try {
@@ -636,15 +622,10 @@ export async function fetchCorrections(): Promise<DataCorrection[]> {
 
 export async function fetchAuditLogs(): Promise<AuditLog[]> {
   if (isServerAvailable) {
-    try {
-      const res = await fetch('/api/audit-logs', { headers: getAuthHeaders() });
-      if (res.ok) {
-        const data = await res.json();
-        return data.logs;
-      }
-    } catch {
-      isServerAvailable = false;
-    }
+    const data = await safeJsonFetch<{ logs: AuditLog[] }>('/api/audit-logs', {
+      headers: getAuthHeaders(),
+    });
+    if (data?.logs) return data.logs;
   }
 
   return [
@@ -660,12 +641,8 @@ export async function fetchAuditLogs(): Promise<AuditLog[]> {
 
 export async function runServerTests(): Promise<any> {
   if (isServerAvailable) {
-    try {
-      const res = await fetch('/api/tests/run');
-      if (res.ok) return res.json();
-    } catch {
-      isServerAvailable = false;
-    }
+    const data = await safeJsonFetch<any>('/api/tests/run');
+    if (data) return data;
   }
 
   // Ejecución de pruebas automatizadas isomórficas en el cliente
