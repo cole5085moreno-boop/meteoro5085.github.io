@@ -4,16 +4,11 @@
     <meta charset="utf-8">
     <title>Redirigiendo a Estación Meteorológica Colegio 5085...</title>
     <script>
-      // Redirige rutas profundas en GitHub Pages hacia la raíz para que el SPA enrute correctamente
-      var pathSegmentsToKeep = 0;
+      // Detecta si es un sitio de usuario (usuario.github.io) o de proyecto (usuario.github.io/repo)
+      var pathSegmentsToKeep = window.location.hostname.endsWith('github.io') && window.location.pathname.split('/')[1] ? 1 : 0;
       var l = window.location;
-      l.replace(
-        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-        l.hash
-      );
+      var repoBase = l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/');
+      l.replace(repoBase + '/');
     </script>
   </head>
   <body>
