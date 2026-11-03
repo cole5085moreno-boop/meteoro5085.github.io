@@ -4,9 +4,9 @@
  * Proyecto Estación Meteorológica Colegio 5085
  * Componente de Visualización Geográfica Satelital (Leaflet)
  * Ubicación Oficial Exacta: General Güemes, Salta, Argentina
- * Coordenadas: Latitud -24.6708, Longitud -65.0498 · Altitud 695 msnm
- * Modo exclusivamente Satelital de alta resolución con capas de transporte
- * y telemetría en vivo (Temperatura, Humedad, Presión, Viento y Precipitaciones).
+ * Coordenadas: Latitud Sur -24.6708, Longitud Oeste -65.0498 · Altitud 695 msnm
+ * Modo estrictamente Satelital (Google Híbrido HD y Esri Satelital HD)
+ * con telemetría en vivo (Temperatura, Humedad, Presión, Viento, Lluvia y Radiación).
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
@@ -25,15 +25,15 @@ import {
   ExternalLink,
   Plus,
   Minus,
-  Maximize2,
+  Layers,
 } from 'lucide-react';
 import type { WeatherObservation, StationConfig } from '../types/weather.ts';
 import { degreesToCardinal, ECOWITT_SHARE_URL } from '../lib/weather-engine.ts';
 
 // Constantes geográficas oficiales e inmutables para General Güemes, Salta
 export const OFFICIAL_GUEMES_COORDS = {
-  lat: -24.6708,
-  lng: -65.0498,
+  lat: -24.6708, // 24.6708° Sur
+  lng: -65.0498, // 65.0498° Oeste
   zoom: 17,
   altitude_m: 695,
   location_name: 'General Güemes, Salta, Argentina',
@@ -41,6 +41,8 @@ export const OFFICIAL_GUEMES_COORDS = {
   address: 'Sarmiento 351, General Güemes, Salta (CP 4432)',
   ecowitt_id: '364053',
 };
+
+type SatelliteProvider = 'google' | 'esri';
 
 interface StationGeoMapProps {
   station: StationConfig | null;
@@ -55,15 +57,17 @@ export const StationGeoMap: React.FC<StationGeoMapProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
+  const activeTileLayersRef = useRef<L.Layer[]>([]);
 
   const [showDataOverlay, setShowDataOverlay] = useState<boolean>(true);
+  const [provider, setProvider] = useState<SatelliteProvider>('google');
   const [currentZoom, setCurrentZoom] = useState<number>(OFFICIAL_GUEMES_COORDS.zoom);
 
-  // Coordenadas fijas de la estación en General Güemes, Salta
+  // Coordenadas fijas e inmutables de la estación en General Güemes, Salta
   const TARGET_LAT = OFFICIAL_GUEMES_COORDS.lat;
   const TARGET_LNG = OFFICIAL_GUEMES_COORDS.lng;
 
-  // Función robusta para invalidar tamaño y centrar exactamente en General Güemes
+  // Función robusta para invalidar dimensiones y forzar centrado exacto en General Güemes
   const centerOnStation = useCallback((animated: boolean = false, targetZoom: number = OFFICIAL_GUEMES_COORDS.zoom) => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -85,71 +89,91 @@ export const StationGeoMap: React.FC<StationGeoMapProps> = ({
     }
   }, [TARGET_LAT, TARGET_LNG]);
 
-  // Inicialización y configuración del Mapa Satelital
-  useEffect(() => {
-    if (!mapContainerRef.current) return;
+  // Aplicar capas satelitales según el proveedor seleccionado
+  const applySatelliteLayers = useCallback((map: L.Map, selectedProvider: SatelliteProvider) => {
+    // Remover capas satelitales previas
+    activeTileLayersRef.current.forEach((layer) => {
+      map.removeLayer(layer);
+    });
+    activeTileLayersRef.current = [];
 
-    // Crear instancia de Leaflet centrada estrictamente en General Güemes (-24.6708, -65.0498)
-    if (!mapInstanceRef.current) {
-      const map = L.map(mapContainerRef.current, {
-        center: [TARGET_LAT, TARGET_LNG],
-        zoom: OFFICIAL_GUEMES_COORDS.zoom,
-        zoomControl: false,
-        attributionControl: true,
-        maxZoom: 19,
-        minZoom: 4,
-      });
-
-      // 1. Capa Satelital Principal: Esri World Imagery (imágenes satelitales globales de alta resolución)
-      L.tileLayer(
-        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{x}/{y}',
+    if (selectedProvider === 'google') {
+      // Proveedor Satelital Google Híbrido (imágenes satelitales con calles y rutas de General Güemes)
+      const googleHybrid = L.tileLayer(
+        'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
         {
-          attribution: '&copy; Esri &copy; Maxar, Earthstar Geographics',
-          maxZoom: 19,
-          subdomains: ['server', 'services'],
+          attribution: '&copy; Google Maps Satelital',
+          maxZoom: 20,
+          subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
         }
       ).addTo(map);
 
-      // 2. Capa de Red Vial y Calles: Esri World Transportation (calles de General Güemes, Sarmiento, RN34, etc.)
-      L.tileLayer(
-        'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{x}/{y}',
+      activeTileLayersRef.current.push(googleHybrid);
+    } else {
+      // Proveedor Satelital Esri World Imagery (CRÍTICO: en ArcGIS Server MapServer el orden de URL es {z}/{y}/{x} nivel/fila/columna)
+      const esriImagery = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        {
+          attribution: '&copy; Esri, Maxar, Earthstar Geographics',
+          maxZoom: 19,
+        }
+      ).addTo(map);
+
+      const esriTransportation = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',
         {
           maxZoom: 19,
           opacity: 0.85,
         }
       ).addTo(map);
 
-      // 3. Capa de Nombres y Límites: Esri World Boundaries and Places
-      L.tileLayer(
-        'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{x}/{y}',
+      const esriLabels = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
         {
           maxZoom: 19,
           opacity: 0.9,
         }
       ).addTo(map);
 
+      activeTileLayersRef.current.push(esriImagery, esriTransportation, esriLabels);
+    }
+  }, []);
+
+  // Inicialización y configuración del Mapa Satelital
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    if (!mapInstanceRef.current) {
+      const map = L.map(mapContainerRef.current, {
+        center: [TARGET_LAT, TARGET_LNG],
+        zoom: OFFICIAL_GUEMES_COORDS.zoom,
+        zoomControl: false,
+        attributionControl: true,
+        maxZoom: 20,
+        minZoom: 4,
+      });
+
+      applySatelliteLayers(map, provider);
       mapInstanceRef.current = map;
 
-      // Escuchar cambios de zoom para actualizar estado de la interfaz
       map.on('zoomend', () => {
         setCurrentZoom(map.getZoom());
       });
     }
 
     // Forzar el centrado exacto y la invalidación de dimensiones en múltiples ticks
-    // para resolver el problema clásico de Leaflet cuando el contenedor se renderiza dentro del layout
     centerOnStation(false);
 
     const frameId = requestAnimationFrame(() => {
       centerOnStation(false);
     });
 
-    const t1 = setTimeout(() => centerOnStation(false), 80);
-    const t2 = setTimeout(() => centerOnStation(false), 250);
+    const t1 = setTimeout(() => centerOnStation(false), 50);
+    const t2 = setTimeout(() => centerOnStation(false), 200);
     const t3 = setTimeout(() => centerOnStation(false), 600);
     const t4 = setTimeout(() => centerOnStation(false), 1200);
 
-    // Observador de cambio de dimensiones del contenedor (ResizeObserver)
+    // Observador de cambio de dimensiones del contenedor
     let resizeObserver: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined' && mapContainerRef.current) {
       resizeObserver = new ResizeObserver(() => {
@@ -160,7 +184,6 @@ export const StationGeoMap: React.FC<StationGeoMapProps> = ({
       resizeObserver.observe(mapContainerRef.current);
     }
 
-    // Listener para redimensionamiento de ventana
     const handleWindowResize = () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.invalidateSize({ animate: false });
@@ -182,9 +205,19 @@ export const StationGeoMap: React.FC<StationGeoMapProps> = ({
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
         markerRef.current = null;
+        activeTileLayersRef.current = [];
       }
     };
-  }, [TARGET_LAT, TARGET_LNG, centerOnStation]);
+  }, [TARGET_LAT, TARGET_LNG, centerOnStation, applySatelliteLayers, provider]);
+
+  // Cambiar proveedor satelital cuando el usuario presiona el selector
+  const toggleProvider = () => {
+    const newProvider: SatelliteProvider = provider === 'google' ? 'esri' : 'google';
+    setProvider(newProvider);
+    if (mapInstanceRef.current) {
+      applySatelliteLayers(mapInstanceRef.current, newProvider);
+    }
+  };
 
   // Actualizar marcador de la estación con datos meteorológicos en tiempo real
   useEffect(() => {
@@ -228,7 +261,7 @@ export const StationGeoMap: React.FC<StationGeoMapProps> = ({
         <div class="mt-3 pt-2 border-t border-slate-700/80 space-y-1.5 font-mono text-[11px]">
           <div class="flex justify-between items-center bg-slate-800/60 px-2 py-1 rounded">
             <span class="text-slate-400">Coordenadas:</span>
-            <span class="text-white font-bold">-24.6708, -65.0498</span>
+            <span class="text-white font-bold">Lat -24.6708, Long -65.0498</span>
           </div>
           <div class="flex justify-between items-center px-2 py-0.5">
             <span class="text-slate-400">Altitud:</span>
@@ -267,7 +300,7 @@ export const StationGeoMap: React.FC<StationGeoMapProps> = ({
     }
   }, [observation, TARGET_LAT, TARGET_LNG, station]);
 
-  // Controles manuales de Zoom
+  // Controles de zoom manual
   const handleZoomIn = () => {
     if (mapInstanceRef.current) {
       mapInstanceRef.current.zoomIn();
@@ -299,13 +332,13 @@ export const StationGeoMap: React.FC<StationGeoMapProps> = ({
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Globe2 className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-            <span>Vista Satelital y Ubicación Exacta de la Estación</span>
+            <span>Vista Satelital Oficial de la Estación</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium flex flex-wrap items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0 inline" />
             <span>General Güemes, Salta, Argentina</span>
             <span aria-hidden="true">·</span>
-            <span className="font-mono text-slate-700 dark:text-slate-300">Lat: -24.6708, Long: -65.0498</span>
+            <span className="font-mono text-slate-700 dark:text-slate-300">Lat: -24.6708 Sur, Long: -65.0498 Oeste</span>
             <span aria-hidden="true">·</span>
             <span className="font-mono text-slate-700 dark:text-slate-300">695 msnm</span>
           </p>
@@ -313,10 +346,15 @@ export const StationGeoMap: React.FC<StationGeoMapProps> = ({
 
         {/* Controles del Mapa Satelital */}
         <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-sky-300 border border-slate-700 shadow-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Modo Satelital Activo</span>
-          </div>
+          {/* Selector de capa satelital */}
+          <button
+            onClick={toggleProvider}
+            title="Alternar entre motor satelital Google Híbrido y Esri Satelital HD"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-sky-300 border border-slate-700 hover:bg-slate-800 transition-colors shadow-xs"
+          >
+            <Layers className="w-3.5 h-3.5 text-sky-400" />
+            <span>{provider === 'google' ? 'Satelital Google Híbrido' : 'Satelital Esri HD'}</span>
+          </button>
 
           <a
             href={station?.primary_source_url || ECOWITT_SHARE_URL}
@@ -342,7 +380,7 @@ export const StationGeoMap: React.FC<StationGeoMapProps> = ({
 
           <button
             onClick={handleCenterClick}
-            title="Centrar exactamente en General Güemes (-24.6708, -65.0498)"
+            title="Centrar exactamente en General Güemes (Lat -24.6708, Long -65.0498)"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
             <Crosshair className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
@@ -496,7 +534,7 @@ export const StationGeoMap: React.FC<StationGeoMapProps> = ({
           </div>
           <span className="hidden sm:inline text-slate-600" aria-hidden="true">·</span>
           <div className="flex items-center gap-2 text-sky-400 font-semibold">
-            <span>Lat: -24.6708, Lon: -65.0498</span>
+            <span>Lat: -24.6708 Sur, Long: -65.0498 Oeste</span>
             <span className="text-slate-400 font-normal">(695 msnm)</span>
           </div>
         </div>
