@@ -18,10 +18,11 @@ import {
   Sun,
   Moon,
   MapPin,
+  CloudSun,
 } from 'lucide-react';
 import type { UserRole } from '../types/weather.ts';
 
-export type ActiveTab = 'dashboard' | 'map' | 'stats' | 'reports' | 'lab' | 'admin';
+export type ActiveTab = 'dashboard' | 'forecast' | 'map' | 'stats' | 'reports' | 'lab' | 'admin';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -82,6 +83,18 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <LayoutDashboard className="w-4 h-4" />
               <span>Dashboard</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('forecast')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
+                activeTab === 'forecast'
+                  ? 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <CloudSun className="w-4 h-4 text-amber-500" />
+              <span>Pronóstico</span>
             </button>
 
             <button
@@ -212,6 +225,16 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             Dashboard
+          </button>
+          <button
+            onClick={() => setActiveTab('forecast')}
+            className={`px-2.5 py-1 rounded whitespace-nowrap font-medium ${
+              activeTab === 'forecast'
+                ? 'bg-sky-600 text-white'
+                : 'text-slate-600 dark:text-slate-300'
+            }`}
+          >
+            Pronóstico
           </button>
           <button
             onClick={() => setActiveTab('map')}

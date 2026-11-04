@@ -13,6 +13,7 @@ import { MetricCardsGrid } from './components/MetricCardsGrid.tsx';
 import { LiveChartsSection } from './components/LiveChartsSection.tsx';
 import { StatisticalAnalysisView } from './components/StatisticalAnalysisView.tsx';
 import { StationGeoMap } from './components/StationGeoMap.tsx';
+import { ForecastView } from './components/ForecastView.tsx';
 import { ReportsView } from './components/ReportsView.tsx';
 import { EducationalLabView } from './components/EducationalLabView.tsx';
 import { AdminPanelView } from './components/AdminPanelView.tsx';
@@ -259,6 +260,14 @@ export default function App() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* VISTA: PRONÓSTICO METEOROLÓGICO OFICIAL E IMÁGENES SATELITALES */}
+            {activeTab === 'forecast' && (
+              <ForecastView
+                lastSyncTimestamp={lastSync?.completed_at || latestObs?.observed_at}
+                theme={theme}
+              />
             )}
 
             {/* VISTA DE MAPA GEOGRÁFICO DEDICADO */}

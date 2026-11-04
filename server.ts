@@ -20,6 +20,7 @@ import {
   computePearsonCorrelation,
 } from './server/statistics.ts';
 import { runAutomatedTests } from './server/test-runner.ts';
+import { fetchMsnForecast } from './server/forecast-service.ts';
 
 dotenv.config();
 
@@ -99,6 +100,20 @@ app.put('/api/station', (req, res) => {
   }
   const updated = db.updateStation(req.body, user.email || user.username);
   res.json({ success: true, station: updated });
+});
+
+// 1.1 Pronóstico meteorológico oficial e imágenes satelitales de General Güemes (MSN El Tiempo)
+app.get('/api/forecast', async (req, res) => {
+  const forceRefresh = req.query.refresh === 'true' || req.query.refresh === '1';
+  try {
+    const forecast = await fetchMsnForecast(forceRefresh);
+    res.json(forecast);
+  } catch (error: any) {
+    res.status(500).json({
+      error: 'Error al consultar el pronóstico de MSN El Tiempo',
+      message: error.message,
+    });
+  }
 });
 
 // 2. Consulta de observaciones con filtrado por rango
