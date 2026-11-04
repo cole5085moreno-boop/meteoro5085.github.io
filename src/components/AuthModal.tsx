@@ -2,11 +2,12 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * Proyecto Estación Meteorológica Colegio 5085
- * Modal de Autenticación de Operadores y Administradores (Claves Protegidas / Ocultas)
+ * Modal de Autenticación de Operadores y Administradores
+ * Sin exposición de claves ni botones de autocompletado; el usuario debe digitar su clave.
  */
 
 import React, { useState } from 'react';
-import { X, Lock, Shield, User, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { X, Lock, Eye, EyeOff } from 'lucide-react';
 import { loginUser } from '../lib/api.ts';
 
 interface AuthModalProps {
@@ -43,10 +44,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  const handleQuickFill = (pwd: string) => {
-    setPassword(pwd);
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-xl relative">
@@ -80,7 +77,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           <div>
-            <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
+            <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">
               Contraseña de Acceso:
             </label>
             <div className="relative">
@@ -88,7 +85,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 type={showInputPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Ingrese clave de operador o administrador"
+                placeholder="Introduce tu contraseña institucional"
                 required
                 autoFocus
                 className="w-full px-3 py-2.5 pr-10 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
@@ -112,70 +109,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {loading ? 'Verificando...' : 'Acceder al Panel'}
           </button>
         </form>
-
-        {/* Roles Institucionales con Claves Ocultas y Protegidas */}
-        <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs">
-          <div className="flex items-center gap-1.5 text-slate-500 font-semibold mb-2.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Niveles de acceso institucional (Credenciales protegidas):</span>
-          </div>
-
-          <div className="space-y-2">
-            {/* Opción Rol Operador (clave oculta) */}
-            <button
-              type="button"
-              onClick={() => handleQuickFill('alumno5085')}
-              title="Cargar credencial protegida de Operador"
-              className="w-full flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left transition-colors group"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 rounded-md bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 shrink-0">
-                  <User className="w-3.5 h-3.5" />
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-800 dark:text-slate-200">
-                    Rol Operador (Estudiante / Docente)
-                  </div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                    Carga de observaciones manuales y telemetría
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 text-[11px] font-mono text-slate-400 dark:text-slate-500 font-bold tracking-widest bg-slate-200/60 dark:bg-slate-900/60 px-2 py-1 rounded select-none">
-                <span>••••••••••</span>
-              </div>
-            </button>
-
-            {/* Opción Rol Administrador (clave oculta) */}
-            <button
-              type="button"
-              onClick={() => handleQuickFill('administrador5085')}
-              title="Cargar credencial protegida de Administrador"
-              className="w-full flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left transition-colors group"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 shrink-0">
-                  <Shield className="w-3.5 h-3.5" />
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-800 dark:text-slate-200">
-                    Rol Administrador
-                  </div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                    Gestión total, sincronización, calibración y auditorías
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 text-[11px] font-mono text-slate-400 dark:text-slate-500 font-bold tracking-widest bg-slate-200/60 dark:bg-slate-900/60 px-2 py-1 rounded select-none">
-                <span>•••••••••••••••••</span>
-              </div>
-            </button>
-          </div>
-
-          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2.5 text-center">
-            🔒 Las contraseñas permanecen ocultas y protegidas por seguridad institucional.
-          </p>
-        </div>
       </div>
     </div>
   );
