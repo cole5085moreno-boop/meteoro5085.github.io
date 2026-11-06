@@ -29,6 +29,7 @@ import {
   HeartPulse,
   Wind,
   Cpu,
+  GraduationCap,
 } from 'lucide-react';
 import type { WeatherObservation } from '../types/weather.ts';
 import { fetchObservations } from '../lib/api.ts';
@@ -40,6 +41,7 @@ import { GreenhouseEffectSimulator } from './lab/GreenhouseEffectSimulator.tsx';
 import { PlantThermalStressSimulator } from './lab/PlantThermalStressSimulator.tsx';
 import { AnimalThermalStressSimulator } from './lab/AnimalThermalStressSimulator.tsx';
 import { FohnZondaSimulator } from './lab/FohnZondaSimulator.tsx';
+import { LearningPathView } from './lab/LearningPathView.tsx';
 
 interface ScientificQuestion {
   id: string;
@@ -64,8 +66,8 @@ interface SimulatorItem {
 }
 
 export const EducationalLabView: React.FC = () => {
-  // Modo principal: Simuladores Experimentales vs Método Científico con Datos Reales
-  const [activeLabMode, setActiveLabMode] = useState<'simulators' | 'hypotheses'>('simulators');
+  // Modo principal: Trayecto de Aprendizaje vs Simuladores Experimentales vs Método Científico
+  const [activeLabMode, setActiveLabMode] = useState<'learning_path' | 'simulators' | 'hypotheses'>('learning_path');
 
   // Simulador seleccionado
   const [selectedSimId, setSelectedSimId] = useState<string>('hail');
@@ -220,30 +222,45 @@ export const EducationalLabView: React.FC = () => {
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-semibold">
           <button
+            onClick={() => setActiveLabMode('learning_path')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-md transition-all cursor-pointer ${
+              activeLabMode === 'learning_path'
+                ? 'bg-sky-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <GraduationCap className="w-4 h-4" />
+            <span>Trayecto de Aprendizaje</span>
+            <span className="px-1.5 py-0.2 bg-emerald-400 text-slate-900 font-bold rounded text-[10px]">
+              Infografías + Test
+            </span>
+          </button>
+
+          <button
             onClick={() => setActiveLabMode('simulators')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-md transition-all cursor-pointer ${
               activeLabMode === 'simulators'
                 ? 'bg-sky-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <Cpu className="w-4 h-4" />
-            <span>Simuladores Experimentales de Fenómenos</span>
+            <span>Simuladores Experimentales</span>
             <span className="px-1.5 py-0.2 bg-amber-400 text-slate-900 font-bold rounded text-[10px]">
-              6 Simuladores
+              6 Modelos
             </span>
           </button>
 
           <button
             onClick={() => setActiveLabMode('hypotheses')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-md transition-all cursor-pointer ${
               activeLabMode === 'hypotheses'
                 ? 'bg-sky-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <FlaskConical className="w-4 h-4" />
-            <span>Indagación Científica con Datos Reales</span>
+            <span>Método Científico con Datos Reales</span>
           </button>
         </div>
 
@@ -251,6 +268,9 @@ export const EducationalLabView: React.FC = () => {
           Colegio Secundario 5085 · Educación Científica Interdisciplinaria
         </div>
       </div>
+
+      {/* MODO 0: TRAYECTO DE APRENDIZAJE INTERACTIVO */}
+      {activeLabMode === 'learning_path' && <LearningPathView />}
 
       {/* MODO 1: SIMULADORES EXPERIMENTALES */}
       {activeLabMode === 'simulators' && (
