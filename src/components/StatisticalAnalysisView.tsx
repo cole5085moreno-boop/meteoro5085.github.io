@@ -19,8 +19,10 @@ import {
 } from 'lucide-react';
 import type { PeriodStatsBundle, WeatherObservation } from '../types/weather.ts';
 import { fetchStats, fetchObservations, exportDataLocally } from '../lib/api.ts';
+import { HistoricalClimatologySection } from './HistoricalClimatologySection.tsx';
 
 export const StatisticalAnalysisView: React.FC = () => {
+  const [activeSubTab, setActiveSubTab] = useState<'current' | 'historical'>('historical');
   const [range, setRange] = useState<string>('24h');
   const [customStart, setCustomStart] = useState<string>('');
   const [customEnd, setCustomEnd] = useState<string>('');
@@ -106,42 +108,82 @@ export const StatisticalAnalysisView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Encabezado del Módulo */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
-              Análisis Estadístico Meteorológico
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Computación descriptiva, agrupaciones temporales y correlaciones empíricas de la estación Colegio 5085
-            </p>
-          </div>
+      {/* Selector de Vistas / Sub-Pestañas */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-semibold">
+          <button
+            onClick={() => setActiveSubTab('historical')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-md transition-all cursor-pointer ${
+              activeSubTab === 'historical'
+                ? 'bg-sky-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            <span>Climatología Histórica y Tendencias (D3.js)</span>
+            <span className="px-1.5 py-0.2 bg-amber-400 text-slate-900 font-bold rounded text-[10px]">
+              D3
+            </span>
+          </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => exportDataLocally('xlsx')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Exportar Excel (XLSX)</span>
-            </button>
-            <button
-              onClick={() => exportDataLocally('csv')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5 text-sky-600" />
-              <span>Exportar CSV</span>
-            </button>
-          </div>
+          <button
+            onClick={() => setActiveSubTab('current')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-md transition-all cursor-pointer ${
+              activeSubTab === 'current'
+                ? 'bg-sky-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <BarChart className="w-4 h-4" />
+            <span>Estadísticas del Período Actual</span>
+          </button>
         </div>
 
-        {/* Accesos Rápidos de Período Temporal */}
-        <div className="flex flex-wrap items-center gap-1.5 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <span className="text-xs font-semibold text-slate-500 mr-2 flex items-center gap-1">
-            <Filter className="w-3.5 h-3.5" />
-            Período:
-          </span>
+        <div className="text-xs text-slate-500 pr-2 hidden sm:block">
+          Estación Meteorológica Colegio 5085 · General Güemes (695 msnm)
+        </div>
+      </div>
+
+      {activeSubTab === 'historical' ? (
+        <HistoricalClimatologySection />
+      ) : (
+        <>
+          {/* Encabezado del Módulo */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-xs">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                  Análisis Estadístico Meteorológico
+                </h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Computación descriptiva, agrupaciones temporales y correlaciones empíricas de la estación Colegio 5085
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => exportDataLocally('xlsx')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Exportar Excel (XLSX)</span>
+                </button>
+                <button
+                  onClick={() => exportDataLocally('csv')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-sky-600" />
+                  <span>Exportar CSV</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Accesos Rápidos de Período Temporal */}
+            <div className="flex flex-wrap items-center gap-1.5 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <span className="text-xs font-semibold text-slate-500 mr-2 flex items-center gap-1">
+                <Filter className="w-3.5 h-3.5" />
+                Período:
+              </span>
           {quickRanges.map((qr) => (
             <button
               key={qr.id}
@@ -403,6 +445,8 @@ export const StatisticalAnalysisView: React.FC = () => {
           )}
         </>
       ) : null}
+        </>
+      )}
     </div>
   );
 };
