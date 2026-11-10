@@ -215,11 +215,12 @@ app.post('/api/sync', async (req, res) => {
 
   const station = db.getStation();
   const lastSync = db.getLastSuccessfulSync();
+  const isForced = req.body?.force === true;
 
   const syncResult = await fetchLiveStationData(
     station.ecowitt_station_id,
     station.primary_source_url,
-    lastSync?.content_hash
+    isForced ? undefined : lastSync?.content_hash
   );
 
   if (syncResult.run.status === 'success' && syncResult.observations.length > 0) {
@@ -231,9 +232,9 @@ app.post('/api/sync', async (req, res) => {
 
   db.addSyncRun(syncResult.run);
   db.addAuditLog(
-    'SYNC_STATION_DATA',
+    isForced ? 'FORCE_SYNC_STATION_DATA' : 'SYNC_STATION_DATA',
     user?.username || 'cron_service',
-    `Sincronización ${syncResult.run.status}: ${syncResult.run.records_inserted} insertados, ${syncResult.run.records_updated} actualizados`
+    `Sincronización ${isForced ? 'FORZADA manual' : 'manual'} ${syncResult.run.status}: ${syncResult.run.records_inserted} insertados, ${syncResult.run.records_updated} actualizados`
   );
 
   res.json({

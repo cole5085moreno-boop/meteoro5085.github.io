@@ -415,7 +415,7 @@ export async function fetchStats(params?: {
   };
 }
 
-export async function triggerManualSync(): Promise<{
+export async function triggerManualSync(force: boolean = false): Promise<{
   success: boolean;
   run: SyncRun;
   total_records: number;
@@ -428,7 +428,7 @@ export async function triggerManualSync(): Promise<{
     }>('/api/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify({}),
+      body: JSON.stringify({ force }),
     });
     if (data && data.run) return data;
   }

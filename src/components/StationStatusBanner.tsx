@@ -31,6 +31,7 @@ import {
   ShieldCheck,
   Bell,
   Sparkles,
+  RotateCw,
 } from 'lucide-react';
 import type { StationConfig, SyncRun, WeatherObservation } from '../types/weather.ts';
 import {
@@ -46,6 +47,8 @@ interface StationStatusBannerProps {
   connectionStatus: 'Actualizado' | 'Actualización pendiente' | 'Datos desactualizados' | 'Fuente no disponible';
   dataAgeMinutes: number;
   totalRecords: number;
+  onNavigateToAdmin?: () => void;
+  onForceSync?: () => void;
 }
 
 export const StationStatusBanner: React.FC<StationStatusBannerProps> = ({
@@ -55,6 +58,8 @@ export const StationStatusBanner: React.FC<StationStatusBannerProps> = ({
   connectionStatus,
   dataAgeMinutes,
   totalRecords,
+  onNavigateToAdmin,
+  onForceSync,
 }) => {
   // Estado para modal de umbrales y protocolos
   const [isThresholdModalOpen, setIsThresholdModalOpen] = useState<boolean>(false);
@@ -234,6 +239,24 @@ export const StationStatusBanner: React.FC<StationStatusBannerProps> = ({
               <StatusIcon className="w-4 h-4 shrink-0" />
               <span>{statusConfig.label}</span>
             </div>
+
+            {/* Acceso directo a forzar actualización cuando los datos están desactualizados */}
+            {connectionStatus === 'Datos desactualizados' && (onNavigateToAdmin || onForceSync) && (
+              <button
+                onClick={() => {
+                  if (onNavigateToAdmin) {
+                    onNavigateToAdmin();
+                  } else if (onForceSync) {
+                    onForceSync();
+                  }
+                }}
+                title="Haga clic para ir al panel de Administración y forzar la actualización de datos"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all shadow-xs cursor-pointer bg-amber-600 hover:bg-amber-700 text-white border-amber-600 animate-pulse"
+              >
+                <RotateCw className="w-3.5 h-3.5" />
+                <span>Forzar Actualización en Administración</span>
+              </button>
+            )}
 
             {/* BADGES DE ADVERTENCIA METEOROLÓGICA */}
             {activeAlerts.length > 0 ? (

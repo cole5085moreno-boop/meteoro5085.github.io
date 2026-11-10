@@ -117,10 +117,10 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleManualSync = async () => {
+  const handleManualSync = async (force: boolean = false) => {
     setIsSyncing(true);
     try {
-      await triggerManualSync();
+      await triggerManualSync(force);
       await loadData();
     } catch (e: any) {
       alert(e.message || 'Error en la sincronización');
@@ -143,7 +143,7 @@ export default function App() {
         currentUser={currentUser}
         onOpenAuth={() => setAuthModalOpen(true)}
         onLogout={handleLogout}
-        onSync={handleManualSync}
+        onSync={() => handleManualSync(false)}
         isSyncing={isSyncing}
         theme={theme}
         onToggleTheme={toggleTheme}
@@ -173,6 +173,8 @@ export default function App() {
                   connectionStatus={connectionStatus}
                   dataAgeMinutes={dataAgeMinutes}
                   totalRecords={totalRecords}
+                  onNavigateToAdmin={() => setActiveTab('admin')}
+                  onForceSync={() => handleManualSync(true)}
                 />
 
                 <MetricCardsGrid
@@ -280,6 +282,8 @@ export default function App() {
                   connectionStatus={connectionStatus}
                   dataAgeMinutes={dataAgeMinutes}
                   totalRecords={totalRecords}
+                  onNavigateToAdmin={() => setActiveTab('admin')}
+                  onForceSync={() => handleManualSync(true)}
                 />
                 <StationGeoMap
                   station={station}

@@ -22,6 +22,8 @@ import {
   GitBranch,
   Save,
   ExternalLink,
+  Clock,
+  Zap,
 } from 'lucide-react';
 import type {
   StationConfig,
@@ -64,8 +66,17 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [observations, setObservations] = useState<WeatherObservation[]>([]);
   const [syncing, setSyncing] = useState<boolean>(false);
+  const [forcingSync, setForcingSync] = useState<boolean>(false);
   const [gitSyncing, setGitSyncing] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Estado de conexión y telemetría de la estación
+  const [connectionStatus, setConnectionStatus] = useState<
+    'Actualizado' | 'Actualización pendiente' | 'Datos desactualizados' | 'Fuente no disponible'
+  >('Actualizado');
+  const [dataAgeMinutes, setDataAgeMinutes] = useState<number>(0);
+  const [latestObservation, setLatestObservation] = useState<WeatherObservation | null>(null);
+  const [lastSync, setLastSync] = useState<SyncRun | null>(null);
 
   // Formulario de observación manual
   const [manualForm, setManualForm] = useState({
@@ -112,6 +123,10 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     try {
       const stationRes = await fetchStationStatus();
       setStation(stationRes.station);
+      setConnectionStatus(stationRes.connection_status);
+      setDataAgeMinutes(stationRes.data_age_minutes);
+      setLatestObservation(stationRes.latest_observation);
+      setLastSync(stationRes.last_sync);
       setConfigForm({
         name: stationRes.station.name,
         address: stationRes.station.address,
@@ -149,7 +164,7 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     setSyncing(true);
     setStatusMessage(null);
     try {
-      const res = await triggerManualSync();
+      const res = await triggerManualSync(false);
       setStatusMessage({
         type: 'success',
         text: `Sincronización completada. ${res.run.records_inserted} registros insertados. Total actual: ${res.total_records}`,
@@ -160,6 +175,35 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     } finally {
       setSyncing(false);
     }
+  };
+
+  const handleForceSync = async () => {
+    setForcingSync(true);
+    setStatusMessage(null);
+    try {
+      const res = await triggerManualSync(true);
+      setStatusMessage({
+        type: 'success',
+        text: `Actualización forzada manual completada con éxito. ${res.run.records_inserted} registros procesados / insertados. Total actual en base de datos: ${res.total_records}.`,
+      });
+      await loadAdminData();
+    } catch (err: any) {
+      setStatusMessage({
+        type: 'error',
+        text: err.message || 'Error al forzar la actualización manual de datos',
+      });
+    } finally {
+      setForcingSync(false);
+    }
+  };
+
+  const formatDataAge = (mins: number) => {
+    if (mins < 1) return 'hace menos de un minuto';
+    if (mins === 1) return 'hace 1 minuto';
+    if (mins < 60) return `hace ${mins} minutos`;
+    const hours = Math.floor(mins / 60);
+    const remMins = mins % 60;
+    return `hace ${hours}h ${remMins}m`;
   };
 
   const handleHistoricalSync = async () => {
@@ -295,17 +339,74 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={handleManualSync}
-              disabled={syncing}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors disabled:opacity-50"
+              disabled={syncing || forcingSync}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
             >
               <RotateCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
               <span>Sincronizar Fuente Ahora</span>
             </button>
+
+            <button
+              onClick={handleForceSync}
+              disabled={forcingSync || syncing}
+              title="Forzar actualización manual ignorando el hash de contenido anterior"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition-all disabled:opacity-50 cursor-pointer ${
+                connectionStatus === 'Datos desactualizados'
+                  ? 'bg-amber-600 hover:bg-amber-700 text-white font-bold ring-2 ring-amber-400'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700'
+              }`}
+            >
+              <RotateCw className={`w-3.5 h-3.5 ${forcingSync ? 'animate-spin' : ''}`} />
+              <span>Forzar Actualización Manual</span>
+            </button>
           </div>
         </div>
+
+        {/* ALERTA CRÍTICA: DATOS DESACTUALIZADOS (> 3h) */}
+        {connectionStatus === 'Datos desactualizados' && (
+          <div className="mt-5 p-4 sm:p-5 rounded-xl border-2 border-amber-400 dark:border-amber-600 bg-amber-50 dark:bg-amber-950/50 shadow-xs">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div className="p-2.5 bg-amber-100 dark:bg-amber-900/80 text-amber-800 dark:text-amber-200 rounded-xl shrink-0 mt-0.5">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-200">
+                      Alerta de Telemetría:
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-200 dark:bg-amber-900/90 text-amber-950 dark:text-amber-100 border border-amber-400 dark:border-amber-600">
+                      <Clock className="w-3.5 h-3.5" />
+                      Datos desactualizados (&gt; 3h)
+                    </span>
+                    <span className="text-xs text-amber-800 dark:text-amber-300 font-medium">
+                      ({formatDataAge(dataAgeMinutes)})
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-800 dark:text-amber-200 mt-1.5 leading-relaxed">
+                    La última medición registrada de la estación en General Güemes data de{' '}
+                    <strong className="font-mono text-amber-950 dark:text-amber-100">
+                      {latestObservation?.observed_at || 'horario no disponible'}
+                    </strong>
+                    . Cuando se observe este mensaje, presione el botón a la derecha para forzar la actualización de datos de forma manual e incorporar de inmediato los últimos registros omitiendo la verificación de hash de contenido.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleForceSync}
+                disabled={forcingSync || syncing}
+                className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-bold text-xs rounded-lg shadow-sm hover:shadow-md transition-all shrink-0 cursor-pointer disabled:opacity-50"
+              >
+                <RotateCw className={`w-4 h-4 ${forcingSync ? 'animate-spin' : ''}`} />
+                <span>Forzar Actualización de Datos de Forma Manual</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Mensajes de retroalimentación de estado */}
         {statusMessage && (
@@ -404,6 +505,118 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
       {/* SECCIÓN 1: SINCRONIZACIÓN E HISTORIAL DE EJECUCIONES */}
       {activeSection === 'sync' && (
         <div className="space-y-6">
+          {/* Tarjeta Principal de Control de Sincronización y Estado de Telemetría */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Database className="w-4 h-4 text-sky-600" />
+                  <span>Control de Sincronización y Telemetría en Vivo</span>
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Estación Ecowitt ID <code>364053</code> · General Güemes, Salta (-24.6708, -65.0498 · 695 msnm)
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                    connectionStatus === 'Actualizado'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
+                      : connectionStatus === 'Datos desactualizados'
+                      ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-400 dark:border-amber-600 font-bold'
+                      : connectionStatus === 'Actualización pendiente'
+                      ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                      : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700'
+                  }`}
+                >
+                  {connectionStatus === 'Datos desactualizados' && <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />}
+                  {connectionStatus === 'Actualizado' && <CheckCircle2 className="w-3.5 h-3.5" />}
+                  {connectionStatus === 'Actualización pendiente' && <Clock className="w-3.5 h-3.5" />}
+                  <span>{connectionStatus === 'Datos desactualizados' ? 'Datos desactualizados (> 3h)' : connectionStatus}</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-4 text-xs">
+              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
+                <span className="text-slate-500 dark:text-slate-400 block text-[11px] uppercase font-semibold">
+                  Última Observación:
+                </span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-sm mt-0.5 block">
+                  {latestObservation?.observed_at || 'Sin registros'}
+                </span>
+                <span className="text-[11px] text-slate-400 block mt-0.5">
+                  ({formatDataAge(dataAgeMinutes)})
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
+                <span className="text-slate-500 dark:text-slate-400 block text-[11px] uppercase font-semibold">
+                  Registros en Base de Datos:
+                </span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-sm mt-0.5 block">
+                  {observations.length} mediciones
+                </span>
+                <span className="text-[11px] text-slate-400 block mt-0.5">
+                  Colegio 5085 Mariano Moreno
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
+                <span className="text-slate-500 dark:text-slate-400 block text-[11px] uppercase font-semibold">
+                  Último Ciclo de Sincronización:
+                </span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-sm mt-0.5 block">
+                  {lastSync?.completed_at
+                    ? new Date(lastSync.completed_at).toLocaleTimeString('es-AR')
+                    : 'Sin ejecuciones'}
+                </span>
+                <span className="text-[11px] text-slate-400 block mt-0.5">
+                  Estado: {lastSync?.status === 'success' ? 'Exitoso' : 'Pendiente / Fallido'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
+                {connectionStatus === 'Datos desactualizados' ? (
+                  <p className="text-amber-800 dark:text-amber-300 font-medium">
+                    ⚠️ <strong>Atención:</strong> La estación muestra <strong>Datos desactualizados (&gt; 3h)</strong>. Presione el botón de actualización forzada para renovar la telemetría inmediatamente.
+                  </p>
+                ) : (
+                  <p>
+                    La sincronización ordinaria evalúa el hash de contenido para prevenir duplicaciones. Al forzar la actualización se realiza una consulta directa e inserción inmediata sin esperar el intervalo habitual.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+                <button
+                  onClick={handleManualSync}
+                  disabled={syncing || forcingSync}
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-lg transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  <RotateCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+                  <span>Sincronización Ordinaria</span>
+                </button>
+
+                <button
+                  onClick={handleForceSync}
+                  disabled={forcingSync || syncing}
+                  className={`px-4 py-2 font-bold text-xs rounded-lg transition-all shadow-xs cursor-pointer disabled:opacity-50 flex items-center gap-2 ${
+                    connectionStatus === 'Datos desactualizados'
+                      ? 'bg-amber-600 hover:bg-amber-700 text-white ring-2 ring-amber-400 shadow-amber-500/20'
+                      : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                  }`}
+                >
+                  <RotateCw className={`w-3.5 h-3.5 ${forcingSync ? 'animate-spin' : ''}`} />
+                  <span>Forzar Actualización de Datos de Forma Manual</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Herramienta de Ampliación de Historial desde GitHub Commits */}
           {isAdmin && (
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs">
